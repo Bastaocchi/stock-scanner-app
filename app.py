@@ -7,7 +7,7 @@ st.set_page_config(layout="wide")
 col1, col2, col3 = st.columns([2,3,1])
 
 with col1:
-    timeframe = st.selectbox("Timeframe", ["1D","1W","1M"])
+    timeframe = st.radio("Timeframe", ["1D","1W","1M"], horizontal=True)
 
 with col2:
     setups = st.multiselect(
