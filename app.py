@@ -1,411 +1,433 @@
 import streamlit as st
-import yfinance as yf
 import pandas as pd
 import numpy as np
-import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
-import math
+import yfinance as yf
+import time
 
-# ==============================
-# CONFIG PÁGINA
-# ==============================
-st.set_page_config(page_title="Scanner TheStrat", layout="wide")
+# Configuração da página
+st.set_page_config(
+    page_title="Gerenciador de Símbolos",
+    page_icon="📊",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
-# ==============================
-# CSS (tipografia + tabela colorida)
-# ==============================
+# CSS personalizado para interface moderna
 st.markdown("""
 <style>
-html, body, [class*="css"] { font-size: 18px !important; }
-label { font-size: 20px !important; font-weight: 700; }
-button[kind="primary"], button[kind="secondary"] { font-size: 18px !important; font-weight: 700; }
-[data-testid="stMetricValue"] { font-size: 28px !important; }
-[data-testid="stMetricLabel"] { font-size: 18px !important; }
-
-.table-wrap { width: 100%; overflow-x: auto; }
-.table { border-collapse: collapse; width: 100%; font-size: 18px; }
-.table th { text-align: left; padding: 12px; background: #111827; color: #fff; position: sticky; top: 0; }
-.table td { padding: 12px; border-bottom: 1px solid #e5e7eb; }
-.row-bullish { background: #e9f7ef; }
-.row-bearish { background: #fdecea; }
-.row-neutral { background: #f5f5f5; }
-.badge { display:inline-block; padding:3px 8px; border-radius:8px; font-weight:600; font-size:14px; }
-.badge-bullish { background:#16a34a; color:#fff; }
-.badge-bearish { background:#dc2626; color:#fff; }
-.badge-neutral { background:#6b7280; color:#fff; }
-
-.summary-chip { display:inline-block; padding:6px 10px; border-radius:12px; margin-right:8px; background:#f0f0f0; }
+    .main-header {
+        font-size: 3rem;
+        font-weight: bold;
+        text-align: center;
+        margin-bottom: 2rem;
+        background: linear-gradient(90deg, #1e3c72, #2a5298);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    .stats-card {
+        background: white;
+        padding: 1rem;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        margin: 0.5rem 0;
+        border-left: 4px solid #2196F3;
+    }
+    .success-msg {
+        background: #d4edda;
+        border: 1px solid #c3e6cb;
+        color: #155724;
+        padding: 1rem;
+        border-radius: 5px;
+        margin: 1rem 0;
+    }
+    .warning-msg {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        color: #856404;
+        padding: 1rem;
+        border-radius: 5px;
+        margin: 1rem 0;
+    }
 </style>
 """, unsafe_allow_html=True)
 
-# ==============================
-# LISTA DE SÍMBOLOS (ajuste se quiser)
-# ==============================
-@st.cache_data(ttl=3600)
-def load_symbols():
-    return [
-        "AAPL","MSFT","TSLA","AMZN","NVDA","META","GOOGL","NFLX","AMD","IBM",
-        "JPM","BAC","XOM","CVX","KO","PEP","COST","AVGO","ORCL","INTC",
-        "ADBE","CRM","QCOM","TXN","CSCO","SHOP","PFE","MRK","WMT","HD",
-        "DE","CAT","BA","UNH","V","MA","PYPL","SQ","UBER","ABNB"
-    ]
-
-SYMBOLS = load_symbols()
-
-# ==============================
-# DOWNLOAD SEGURO (yfinance)
-# ==============================
-def _flatten_columns(df: pd.DataFrame) -> pd.DataFrame:
-    if isinstance(df.columns, pd.MultiIndex):
-        df.columns = [c[-1] if isinstance(c, tuple) else c for c in df.columns]
-    return df
-
-def _standardize_ohlc(df: pd.DataFrame) -> pd.DataFrame:
-    df = df.rename(columns={c: c.title() for c in df.columns})
-    cols = [c for c in ["Open","High","Low","Close","Volume"] if c in df.columns]
-    df = df[cols].copy()
-    for c in cols:
-        df[c] = pd.to_numeric(df[c], errors="coerce")
-    df = df.dropna(subset=[c for c in ["Open","High","Low","Close"] if c in df.columns], how="any")
-    return df
-
-def yf_download_resilient(symbol, period, interval, tries=3, pause=0.4):
-    last_exc = None
-    for _ in range(tries):
-        try:
-            df = yf.download(symbol, period=period, interval=interval, progress=False, auto_adjust=False, threads=False)
-            if df is not None and not df.empty:
-                df = _flatten_columns(df)
-                df = _standardize_ohlc(df)
-                if len(df) >= 3 and all(col in df.columns for col in ["Open","High","Low","Close"]):
-                    return df
-        except Exception as e:
-            last_exc = e
-        time.sleep(pause)
-    return None
-
-@st.cache_data(ttl=1200)
-def get_stock_data(symbol, period="1y", interval="1d"):
-    return yf_download_resilient(symbol, period, interval)
-
-# ==============================
-# HELPERS
-# ==============================
-def _scalar(v):
-    if isinstance(v, (pd.Series, np.ndarray, list, tuple)):
-        return float(v[-1])
+# Função para carregar dados do Google Sheets
+@st.cache_data(ttl=300)  # Cache por 5 minutos
+def load_symbols_from_sheets(sheet_url):
+    """Carrega símbolos do Google Sheets"""
     try:
-        return float(v)
-    except Exception:
-        return np.nan
-
-def _classify_vectorized(df: pd.DataFrame, inside_inclusive=True) -> pd.Series:
-    """
-    Classifica cada barra em relação à anterior: 1, 2U, 2D, 3 (None para a 1ª).
-    """
-    h, l = df["High"].values, df["Low"].values
-    ph = np.roll(h, 1); pl = np.roll(l, 1)
-    ph[0] = np.nan; pl[0] = np.nan
-
-    if inside_inclusive:
-        inside = (h <= ph) & (l >= pl) & ((h < ph) | (l > pl))
-    else:
-        inside = (h < ph) & (l > pl)
-
-    outside = (h > ph) & (l < pl)
-    two_up  = (h > ph) & ~outside & ~inside
-    two_dn  = (l < pl) & ~outside & ~inside
-
-    res = np.full(len(df), None, dtype=object)
-    res[inside] = "1"
-    res[outside] = "3"
-    res[two_up]  = "2U"
-    res[two_dn]  = "2D"
-    return pd.Series(res, index=df.index)
-
-def detect_inside_in_window(df: pd.DataFrame, lookback=12, inside_inclusive=True):
-    kinds = _classify_vectorized(df, inside_inclusive=inside_inclusive)
-    tail = kinds.iloc[-lookback:]
-    idx = tail[tail.eq("1")].index
-    if len(idx):
-        i = idx[-1]
-        return True, i, float(df.loc[i, "Close"])
-    return False, None, None
-
-def detect_hammer_window(df: pd.DataFrame, lookback=12):
-    # critérios moderados
-    window = df.iloc[-lookback:] if len(df) >= lookback else df
-    for i in reversed(range(window.index.start, window.index.stop if hasattr(window.index, "stop") else len(df))):
+        # Converter URL para formato CSV
+        if '/edit' in sheet_url:
+            # Extrair o ID da planilha e GID
+            sheet_id = sheet_url.split('/d/')[1].split('/')[0]
+            
+            # Extrair GID se existir
+            if 'gid=' in sheet_url:
+                gid = sheet_url.split('gid=')[1].split('#')[0].split('&')[0]
+                csv_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv&gid={gid}"
+            else:
+                csv_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv"
+        else:
+            csv_url = sheet_url
+        
+        # Tentar carregar com diferentes encodings
         try:
-            curr = df.iloc[i]
-            prev = df.iloc[i-1] if i-1 >= 0 else None
-            if prev is None:
-                continue
-            o, h, l, c = map(_scalar, [curr["Open"], curr["High"], curr["Low"], curr["Close"]])
-            p_low = _scalar(prev["Low"])
-            body = abs(c - o)
-            total = h - l
-            if not (total > 0 and body <= 0.5*total):
-                continue
-            lower_shadow = min(o, c) - l
-            upper_shadow = h - max(o, c)
-            if lower_shadow >= 1.5*body and upper_shadow <= 1.2*body and c > o and l < p_low:
-                return True, df.index[i], c
-        except Exception:
-            continue
-    return False, None, None
-
-def detect_2d_green_monthly_window(df: pd.DataFrame, lookback=12):
-    if len(df) < 2:
-        return False, None, None
-    window_idx = df.index[-lookback:] if len(df) >= lookback else df.index
-    for i in reversed(range(len(df))):
-        if df.index[i] not in window_idx:
-            continue
-        if i - 1 < 0:
-            continue
-        curr, prev = df.iloc[i], df.iloc[i-1]
-        ch, cl, co, cc = map(_scalar, [curr["High"], curr["Low"], curr["Open"], curr["Close"]])
-        ph, pl = map(_scalar, [prev["High"], prev["Low"]])
-        if (cl < pl) and (cc > co) and (ch <= ph):
-            return True, df.index[i], cc
-    return False, None, None
-
-def detect_combos_window(df: pd.DataFrame, window=3, search_span=12, inside_inclusive=True):
-    kinds = _classify_vectorized(df, inside_inclusive=inside_inclusive)
-    combos_map = {
-        "2U-1-2U": "Bullish 2-1-2 Continuation",
-        "2D-1-2D": "Bearish 2-1-2 Continuation",
-        "2U-1-2D": "2-1-2 Reversal Down",
-        "2D-1-2U": "2-1-2 Reversal Up",
-        "3-1-2U": "3-1-2 Bullish",
-        "3-1-2D": "3-1-2 Bearish",
-        "1-2U-2U": "1-2-2 Bullish",
-        "1-2D-2D": "1-2-2 Bearish",
-        "2U-2D": "2U-2D Reversal",
-        "2D-2U": "2D-2U Reversal",
-        # extras úteis
-        "1-2U": "1-2 Break Up",
-        "1-2D": "1-2 Break Down"
-    }
-    start = max(1, len(df) - search_span)
-    found_name, found_idx = None, None
-    for i in range(start, len(df) - (window - 1)):
-        seq = kinds.iloc[i:i+window].tolist()
-        if any(x is None for x in seq):
-            continue
-        pattern = "-".join(seq)
-        if pattern in combos_map:
-            found_name = combos_map[pattern]
-            found_idx = df.index[i + window - 1]
-    return found_name, found_idx
-
-def check_ftfc(symbol: str):
-    try:
-        tf_map = {"1D": ("5d", "1d"), "1W": ("1y", "1wk"), "1M": ("5y", "1mo")}
-        dirs = {}
-        for tf, (p, itv) in tf_map.items():
-            df = get_stock_data(symbol, period=p, interval=itv)
-            if df is None or df.empty:
-                return None
-            last = df.iloc[-1]
-            o, c = _scalar(last["Open"]), _scalar(last["Close"])
-            dirs[tf] = "UP" if c > o else "DOWN"
-        return dirs["1D"] if len(set(dirs.values())) == 1 else None
-    except Exception:
+            df = pd.read_csv(csv_url, encoding='utf-8')
+        except UnicodeDecodeError:
+            df = pd.read_csv(csv_url, encoding='latin1')
+        except:
+            # Se ainda falhar, tentar sem especificar encoding
+            df = pd.read_csv(csv_url)
+        
+        # Renomear Column 1 para Tag se existir
+        if 'Column 1' in df.columns:
+            df = df.rename(columns={'Column 1': 'Tag'})
+        
+        # Adicionar coluna Tag se não existir
+        if 'Tag' not in df.columns:
+            df['Tag'] = ""
+        
+        # Limpar dados
+        df = df.fillna("")
+        
+        # Remover linhas completamente vazias
+        df = df.dropna(how='all')
+        
+        return df
+    except Exception as e:
+        st.error(f"Erro ao carregar Google Sheets: {e}")
+        st.info("💡 Dica: Verifique se a planilha está pública (qualquer pessoa com link pode visualizar)")
         return None
 
-def bias_from_setup(name: str) -> str:
-    s = (name or "").lower()
-    if "bearish" in s or "down" in s or "ftfc down" in s:
-        return "Bearish"
-    if "bullish" in s or "up" in s or "2d green monthly" in s or "hammer" in s:
-        return "Bullish"
-    if "inside bar" in s:
-        return "Neutral"
-    return "Neutral"
+# Função para validar ticker
+@st.cache_data(ttl=3600)  # Cache por 1 hora
+def validate_ticker(symbol):
+    """Valida se ticker existe no Yahoo Finance"""
+    try:
+        ticker = yf.Ticker(symbol)
+        info = ticker.info
+        return info.get('regularMarketPrice') is not None or info.get('symbol') == symbol
+    except:
+        return False
 
-def row_class_for_bias(bias: str) -> str:
-    return {"Bullish":"row-bullish","Bearish":"row-bearish","Neutral":"row-neutral"}.get(bias,"row-neutral")
+# Função para obter informações do ticker
+@st.cache_data(ttl=3600)
+def get_ticker_info(symbol):
+    """Obtém informações básicas do ticker"""
+    try:
+        ticker = yf.Ticker(symbol)
+        info = ticker.info
+        return {
+            'company': info.get('longName', ''),
+            'sector': info.get('sector', ''),
+            'industry': info.get('industry', ''),
+            'market_cap': info.get('marketCap', 0)
+        }
+    except:
+        return None
 
-def render_colored_table(df: pd.DataFrame):
-    headers = "".join([f"<th>{col}</th>" for col in df.columns])
-    rows_html = []
-    for _, row in df.iterrows():
-        cls = row_class_for_bias(row["Bias"])
-        tds = "".join([f"<td>{row[col]}</td>" for col in df.columns])
-        rows_html.append(f'<tr class="{cls}">{tds}</tr>')
-    table_html = f"""
-    <div class="table-wrap">
-      <table class="table">
-        <thead><tr>{headers}</tr></thead>
-        <tbody>
-          {''.join(rows_html)}
-        </tbody>
-      </table>
-    </div>
-    """
-    st.markdown(table_html, unsafe_allow_html=True)
-
-# ==============================
-# SCAN DE UM SÍMBOLO
-# ==============================
-def scan_symbol(symbol, period, interval, inside, hammer, green2d, combos, ftfc_flag,
-                inside_lookback=12, hammer_lookback=12, combo_window=3, combo_span=12, inside_inclusive=True):
-    out = []
-    df = get_stock_data(symbol, period=period, interval=interval)
-    if df is None or df.empty or len(df) < 3:
-        return out
-
-    # Inside (janela)
-    if inside:
-        ok, dt, px = detect_inside_in_window(df, lookback=inside_lookback, inside_inclusive=inside_inclusive)
-        if ok:
-            out.append({"Symbol": symbol, "Setup": "Inside Bar", "Price": f"${px:.2f}" if px is not None else "",
-                        "Date": dt.strftime("%Y-%m-%d")})
-
-    # Hammer (janela)
-    if hammer:
-        ok, dt, px = detect_hammer_window(df, lookback=hammer_lookback)
-        if ok:
-            out.append({"Symbol": symbol, "Setup": "Hammer Setup", "Price": f"${px:.2f}" if px is not None else "",
-                        "Date": dt.strftime("%Y-%m-%d")})
-
-    # 2D Green Monthly (só se timeframe mensal)
-    if green2d and interval == "1mo":
-        ok, dt, px = detect_2d_green_monthly_window(df, lookback=12)
-        if ok:
-            out.append({"Symbol": symbol, "Setup": "2D Green Monthly", "Price": f"${px:.2f}" if px is not None else "",
-                        "Date": dt.strftime("%Y-%m-%d")})
-
-    # Combos
-    if combos:
-        combo_name, dt = detect_combos_window(df, window=combo_window, search_span=combo_span, inside_inclusive=inside_inclusive)
-        if combo_name and dt is not None:
-            px = float(df.loc[dt, "Close"])
-            out.append({"Symbol": symbol, "Setup": combo_name, "Price": f"${px:.2f}", "Date": dt.strftime("%Y-%m-%d")})
-
-    # FTFC
-    if ftfc_flag:
-        direction = check_ftfc(symbol)
-        if direction:
-            last_close = float(df.iloc[-1]["Close"])
-            out.append({"Symbol": symbol, "Setup": f"FTFC {direction}", "Price": f"${last_close:.2f}",
-                        "Date": df.index[-1].strftime("%Y-%m-%d")})
-
-    return out
-
-# ==============================
-# UI
-# ==============================
 def main():
-    c1, c2, c3, c4 = st.columns([2,4,2,2])
-
-    with c1:
-        timeframes = {"1D": ("1y", "1d"), "1W": ("2y", "1wk"), "1M": ("5y", "1mo")}
-        timeframe = st.radio("Timeframe", list(timeframes.keys()), horizontal=True)
-
-    with c2:
-        inside = st.checkbox("Inside Bar", value=True)
-        hammer = st.checkbox("Hammer Setup", value=True)
-        green2d = st.checkbox("2D Green Monthly", value=False)
-        combos = st.checkbox("TheStrat Combos", value=True)
-        ftfc_flag = st.checkbox("Full Timeframe Continuity", value=True)
-
-    with c3:
-        max_symbols = st.slider("Máx. símbolos", 10, len(SYMBOLS), min(60, len(SYMBOLS)))
-
-    with c4:
-        run = st.button("Iniciar Scanner", use_container_width=True)
-
-    st.markdown("---")
-
-    if run:
-        period, interval = timeframes[timeframe]
-
-        m1, m2, m3 = st.columns(3)
-        processed_metric = m1.metric("Processados", "0")
-        found_metric = m2.metric("Setups", "0")
-        progress_metric = m3.metric("Progresso", "0%")
-
-        progress_bar = st.progress(0)
-        status = st.empty()
-
-        results = []
-        counts = {"Inside Bar":0, "Hammer Setup":0, "2D Green Monthly":0, "FTFC UP":0, "FTFC DOWN":0,
-                  "Bullish 2-1-2 Continuation":0, "Bearish 2-1-2 Continuation":0,
-                  "2-1-2 Reversal Down":0, "2-1-2 Reversal Up":0,
-                  "3-1-2 Bullish":0, "3-1-2 Bearish":0,
-                  "1-2-2 Bullish":0, "1-2-2 Bearish":0,
-                  "2U-2D Reversal":0, "2D-2U Reversal":0, "1-2 Break Up":0, "1-2 Break Down":0}
-
-        symbols_to_scan = SYMBOLS[:max_symbols]
-        total = len(symbols_to_scan)
-
-        # Paraleliza o scan
-        def task(sym):
-            return scan_symbol(sym, period, interval, inside, hammer, green2d, combos, ftfc_flag,
-                               inside_lookback=14, hammer_lookback=14, combo_window=3, combo_span=12, inside_inclusive=True)
-
-        with ThreadPoolExecutor(max_workers=min(16, max(4, math.ceil(total/5)))) as ex:
-            futures = {ex.submit(task, s): s for s in symbols_to_scan}
-            for k, fut in enumerate(as_completed(futures)):
-                sym = futures[fut]
-                status.text(f"Analisando {sym}...")
-                try:
-                    out = fut.result()
-                    if out:
-                        results.extend(out)
-                        for r in out:
-                            nm = r["Setup"]
-                            if nm in counts:
-                                counts[nm] += 1
-                            elif nm.startswith("FTFC"):
-                                counts[nm] = counts.get(nm, 0) + 1
-                except Exception:
-                    pass
-
-                progress = (k + 1) / total
-                progress_bar.progress(progress)
-                processed_metric.metric("Processados", f"{k+1}")
-                found_metric.metric("Setups", f"{len(results)}")
-                progress_metric.metric("Progresso", f"{progress*100:.1f}%")
-
-        status.text("Scanner concluído!")
-
-        if results:
-            df_results = pd.DataFrame(results)
-            df_results["Bias"] = df_results["Setup"].apply(bias_from_setup)
-
-            # Sumário rápido por tipo
-            chips = []
-            for key, val in counts.items():
-                if val > 0:
-                    chips.append(f'<span class="summary-chip">{key}: {val}</span>')
-            if chips:
-                st.markdown("".join(chips), unsafe_allow_html=True)
-
-            # Ordena por Data (desc) e Setup
-            try:
-                df_results["Date"] = pd.to_datetime(df_results["Date"])
-            except Exception:
-                pass
-            df_results = df_results.sort_values(by=["Date","Symbol","Setup"], ascending=[False, True, True])
-
-            # Render colorido
-            cols = ["Symbol","Setup","Bias","Price","Date"]
-            st.markdown("Resultados")
-            render_colored_table(df_results[cols])
-
-            csv = df_results[cols].to_csv(index=False)
-            st.download_button("Baixar CSV", csv,
-                               file_name=f"strat_results_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
-                               mime="text/csv")
+    st.markdown('<h1 class="main-header">Gerenciador de Símbolos</h1>', unsafe_allow_html=True)
+    st.markdown("**Gerencie seus tickers, setores e tags para análise**")
+    
+    # Sidebar
+    st.sidebar.header("⚙️ Configurações")
+    
+    # URL do Google Sheets
+    sheet_url = st.sidebar.text_input(
+        "🔗 URL do Google Sheets:",
+        value="https://docs.google.com/spreadsheets/d/1NMCkkcrTFOm1ZoOiImzzRRFd6NEn5kMPTkuc5j_3DcQ/edit?gid=744859441#gid=744859441",
+        help="Cole a URL do seu Google Sheets público"
+    )
+    
+    # Botão para recarregar dados
+    if st.sidebar.button("🔄 Recarregar do Sheets"):
+        st.cache_data.clear()
+        st.rerun()
+    
+    # Separador
+    st.sidebar.markdown("---")
+    
+    # Carregar dados
+    if sheet_url:
+        df = load_symbols_from_sheets(sheet_url)
+        
+        if df is not None:
+            st.sidebar.success(f"✅ {len(df)} símbolos carregados")
+            
+            # Estatísticas na sidebar
+            st.sidebar.subheader("📊 Estatísticas")
+            total_symbols = len(df)
+            unique_sectors = len(df['TradingView_Sector'].dropna().unique()) if 'TradingView_Sector' in df.columns else 0
+            unique_industries = len(df['TradingView_Industry'].dropna().unique()) if 'TradingView_Industry' in df.columns else 0
+            symbols_with_tags = len(df[df['Tag'].str.strip() != ""]) if 'Tag' in df.columns else 0
+            
+            st.sidebar.metric("Total de Símbolos", total_symbols)
+            st.sidebar.metric("Setores Únicos", unique_sectors)
+            st.sidebar.metric("Indústrias Únicas", unique_industries)
+            st.sidebar.metric("Com Tags", symbols_with_tags)
         else:
-            st.warning("Nenhum setup encontrado. Já estou varrendo múltiplas velas e combos com inside inclusivo. Aumente 'Máx. símbolos', troque o timeframe ou rode novamente em alguns minutos.")
+            st.error("❌ Não foi possível carregar os dados do Google Sheets")
+            return
     else:
-        st.info("Defina os filtros e clique em Iniciar Scanner.")
+        st.warning("⚠️ Por favor, insira a URL do Google Sheets na sidebar")
+        return
+    
+    # Tabs principais
+    tab1, tab2, tab3, tab4 = st.tabs(["📋 Visualizar", "➕ Adicionar", "🏷️ Gerenciar Tags", "📊 Estatísticas"])
+    
+    with tab1:
+        st.subheader("📋 Visualizar Símbolos")
+        
+        # Filtros
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            sector_filter = st.selectbox(
+                "Filtrar por Setor:",
+                ["Todos"] + sorted(df['Sector_SPDR'].dropna().unique().tolist()) if 'Sector_SPDR' in df.columns else ["Todos"],
+                key="sector_filter_tab1"
+            )
+        
+        with col2:
+            etf_filter = st.selectbox(
+                "Filtrar por ETF:",
+                ["Todos"] + sorted(df['ETF_Symbol'].dropna().unique().tolist()) if 'ETF_Symbol' in df.columns else ["Todos"],
+                key="etf_filter_tab1"
+            )
+        
+        with col3:
+            tag_filter = st.selectbox(
+                "Filtrar por Tag:",
+                ["Todas"] + sorted([tag for tag in df['Tag'].dropna().unique() if tag.strip()]) if 'Tag' in df.columns else ["Todas"],
+                key="tag_filter_tab1"
+            )
+        
+        with col4:
+            search_term = st.text_input("🔍 Buscar Symbol/Company:", key="search_tab1")
+        
+        # Aplicar filtros
+        filtered_df = df.copy()
+        
+        if sector_filter != "Todos" and 'Sector_SPDR' in filtered_df.columns:
+            filtered_df = filtered_df[filtered_df['Sector_SPDR'] == sector_filter]
+        
+        if etf_filter != "Todos" and 'ETF_Symbol' in filtered_df.columns:
+            filtered_df = filtered_df[filtered_df['ETF_Symbol'] == etf_filter]
+        
+        if tag_filter != "Todas" and 'Tag' in filtered_df.columns:
+            filtered_df = filtered_df[filtered_df['Tag'] == tag_filter]
+        
+        if search_term:
+            mask = (
+                filtered_df['Symbol'].str.contains(search_term, case=False, na=False) |
+                filtered_df['Company'].str.contains(search_term, case=False, na=False)
+            )
+            filtered_df = filtered_df[mask]
+        
+        # Mostrar resultados
+        st.info(f"📊 Mostrando {len(filtered_df)} de {len(df)} símbolos")
+        
+        # Preparar dados para exibição
+        display_columns = ['Symbol', 'Company', 'Sector_SPDR', 'ETF_Symbol', 'Tag']
+        available_columns = [col for col in display_columns if col in filtered_df.columns]
+        
+        if len(filtered_df) > 0:
+            # Criar tabela HTML customizada
+            display_df = filtered_df[available_columns].copy()
+            
+            # Limitar Company name para não quebrar layout
+            if 'Company' in display_df.columns:
+                display_df['Company'] = display_df['Company'].str[:50] + '...'
+            
+            html_table = display_df.to_html(escape=False, index=False)
+            html_table = html_table.replace('<table', '<table style="font-size: 16px; width: 100%;"')
+            html_table = html_table.replace('<th', '<th style="font-size: 18px; font-weight: bold; padding: 12px; background-color: #2196F3; color: white;"')
+            html_table = html_table.replace('<td', '<td style="font-size: 16px; padding: 10px; border-bottom: 1px solid #ddd;"')
+            
+            st.markdown(html_table, unsafe_allow_html=True)
+            
+            # Botão de download
+            csv = display_df.to_csv(index=False)
+            st.download_button(
+                label="📥 Download CSV",
+                data=csv,
+                file_name=f"symbols_filtered_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
+                mime="text/csv"
+            )
+        else:
+            st.warning("🔍 Nenhum símbolo encontrado com os filtros aplicados")
+    
+    with tab2:
+        st.subheader("➕ Adicionar Novo Símbolo")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            new_symbol = st.text_input("Ticker (Ex: AAPL):", key="new_symbol").upper()
+            new_company = st.text_input("Nome da Empresa:", key="new_company")
+            new_tag = st.text_input("Tag (opcional):", key="new_tag")
+        
+        with col2:
+            if 'Sector_SPDR' in df.columns:
+                sectors = sorted(df['Sector_SPDR'].dropna().unique())
+                new_sector_spdr = st.selectbox("Setor SPDR:", [""] + sectors, key="new_sector")
+            
+            if 'ETF_Symbol' in df.columns:
+                etfs = sorted(df['ETF_Symbol'].dropna().unique())
+                new_etf = st.selectbox("ETF Symbol:", [""] + etfs, key="new_etf")
+        
+        # Botão de validação
+        if new_symbol:
+            if st.button(f"🔍 Validar {new_symbol}"):
+                with st.spinner(f"Validando {new_symbol}..."):
+                    if validate_ticker(new_symbol):
+                        st.success(f"✅ {new_symbol} é válido!")
+                        
+                        # Tentar obter informações automáticas
+                        info = get_ticker_info(new_symbol)
+                        if info:
+                            st.info(f"📋 Informações encontradas: {info['company']} - {info['sector']}")
+                    else:
+                        st.error(f"❌ {new_symbol} não foi encontrado no Yahoo Finance")
+        
+        # Botão para adicionar (simulação - em produção salvaria no Google Sheets)
+        if st.button("➕ Adicionar Símbolo"):
+            if new_symbol:
+                st.success(f"✅ {new_symbol} seria adicionado!")
+                st.info("💡 Em produção, isso atualizaria seu Google Sheets automaticamente")
+            else:
+                st.error("❌ Digite um símbolo válido")
+    
+    with tab3:
+        st.subheader("🏷️ Gerenciar Tags")
+        
+        if 'Tag' in df.columns:
+            # Estatísticas de tags
+            tag_counts = df['Tag'].value_counts()
+            tag_counts = tag_counts[tag_counts.index != ""]  # Remover tags vazias
+            
+            if len(tag_counts) > 0:
+                st.write("**Tags existentes:**")
+                
+                # Mostrar tags em colunas
+                cols = st.columns(min(3, len(tag_counts)))
+                for i, (tag, count) in enumerate(tag_counts.head(9).items()):
+                    with cols[i % 3]:
+                        st.metric(f"#{tag}", count)
+                
+                # Editor de tags em lote
+                st.subheader("✏️ Editor de Tags em Lote")
+                
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    # Selecionar símbolos por filtro
+                    bulk_sector = st.selectbox(
+                        "Selecionar por Setor:",
+                        [""] + sorted(df['Sector_SPDR'].dropna().unique().tolist()),
+                        key="bulk_sector"
+                    )
+                
+                with col2:
+                    new_bulk_tag = st.text_input("Nova Tag para aplicar:", key="bulk_tag")
+                
+                if bulk_sector and new_bulk_tag:
+                    affected_symbols = df[df['Sector_SPDR'] == bulk_sector]['Symbol'].tolist()
+                    st.info(f"📊 Isso aplicaria a tag '{new_bulk_tag}' para {len(affected_symbols)} símbolos do setor {bulk_sector}")
+                    
+                    if st.button("🔄 Aplicar Tag em Lote"):
+                        st.success(f"✅ Tag '{new_bulk_tag}' aplicada a {len(affected_symbols)} símbolos!")
+                        st.info("💡 Em produção, isso atualizaria seu Google Sheets")
+            else:
+                st.info("📝 Nenhuma tag encontrada. Comece adicionando tags aos seus símbolos!")
+        
+        # Sugestões de tags
+        st.subheader("💡 Sugestões de Tags")
+        
+        suggestions = {
+            "🎯 Estratégia": ["dayrade", "swing", "long-term", "scalping"],
+            "📊 Watchlist": ["favorites", "earnings", "breakout", "momentum"],
+            "⚠️ Risco": ["high-vol", "conservative", "speculative", "blue-chip"],
+            "📈 Estilo": ["growth", "value", "dividend", "penny"],
+            "🔄 Status": ["active", "watchlist", "sold", "researching"]
+        }
+        
+        for category, tags in suggestions.items():
+            st.write(f"**{category}:** {', '.join(tags)}")
+    
+    with tab4:
+        st.subheader("📊 Estatísticas Detalhadas")
+        
+        # Métricas principais
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            st.metric("📈 Total de Símbolos", len(df))
+        
+        with col2:
+            unique_companies = len(df['Company'].dropna().unique()) if 'Company' in df.columns else 0
+            st.metric("🏢 Empresas Únicas", unique_companies)
+        
+        with col3:
+            if 'Sector_SPDR' in df.columns:
+                unique_sectors = len(df['Sector_SPDR'].dropna().unique())
+                st.metric("🏭 Setores", unique_sectors)
+        
+        with col4:
+            if 'Tag' in df.columns:
+                tagged_symbols = len(df[df['Tag'].str.strip() != ""])
+                st.metric("🏷️ Com Tags", tagged_symbols)
+        
+        # Distribuição por setor
+        if 'Sector_SPDR' in df.columns:
+            st.subheader("📊 Distribuição por Setor SPDR")
+            sector_dist = df['Sector_SPDR'].value_counts()
+            
+            # Criar gráfico de barras simples com HTML
+            chart_data = []
+            for sector, count in sector_dist.head(10).items():
+                percentage = (count / len(df)) * 100
+                chart_data.append({
+                    'Setor': sector,
+                    'Quantidade': count,
+                    'Percentual': f"{percentage:.1f}%"
+                })
+            
+            chart_df = pd.DataFrame(chart_data)
+            
+            # Tabela HTML customizada
+            html_chart = chart_df.to_html(escape=False, index=False)
+            html_chart = html_chart.replace('<table', '<table style="font-size: 16px; width: 100%;"')
+            html_chart = html_chart.replace('<th', '<th style="font-size: 18px; font-weight: bold; padding: 12px; background-color: #4CAF50; color: white;"')
+            html_chart = html_chart.replace('<td', '<td style="font-size: 16px; padding: 10px; border-bottom: 1px solid #ddd;"')
+            
+            st.markdown(html_chart, unsafe_allow_html=True)
+        
+        # Distribuição por ETF
+        if 'ETF_Symbol' in df.columns:
+            st.subheader("📊 Distribuição por ETF")
+            etf_dist = df['ETF_Symbol'].value_counts().head(10)
+            
+            etf_data = []
+            for etf, count in etf_dist.items():
+                percentage = (count / len(df)) * 100
+                etf_data.append({
+                    'ETF': etf,
+                    'Quantidade': count,
+                    'Percentual': f"{percentage:.1f}%"
+                })
+            
+            etf_df = pd.DataFrame(etf_data)
+            
+            # Tabela HTML customizada
+            html_etf = etf_df.to_html(escape=False, index=False)
+            html_etf = html_etf.replace('<table', '<table style="font-size: 16px; width: 100%;"')
+            html_etf = html_etf.replace('<th', '<th style="font-size: 18px; font-weight: bold; padding: 12px; background-color: #FF9800; color: white;"')
+            html_etf = html_etf.replace('<td', '<td style="font-size: 16px; padding: 10px; border-bottom: 1px solid #ddd;"')
+            
+            st.markdown(html_etf, unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
