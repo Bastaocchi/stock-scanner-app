@@ -147,7 +147,42 @@ def detect_inside_bar(df):
     
     return False, None
 
-def detect_hammer_setup(df):
+def detect_2d_green_monthly(df):
+    """Detecta 2D Green Monthly: rompeu mínima da vela anterior e agora está verde"""
+    if len(df) < 3:
+        return False, None
+    
+    current = df.iloc[-1]  # Vela atual
+    previous = df.iloc[-2]  # Vela anterior
+    
+    # Condições para 2D Green Monthly:
+    # 1. Rompeu mínima da vela anterior (low atual < low anterior)
+    # 2. Vela atual está verde (close > open)
+    # 3. Fechou acima da mínima anterior (recuperação)
+    
+    broke_below_previous = current['Low'] < previous['Low']
+    is_green_candle = current['Close'] > current['Open']
+    closed_above_previous_low = current['Close'] > previous['Low']
+    
+    is_2d_green_monthly = broke_below_previous and is_green_candle and closed_above_previous_low
+    
+    if is_2d_green_monthly:
+        # Calcular percentual de recuperação da mínima anterior
+        recovery_from_low = ((current['Close'] - current['Low']) / current['Low']) * 100
+        break_percentage = ((previous['Low'] - current['Low']) / previous['Low']) * 100
+        
+        return True, {
+            'type': '2D Green Monthly',
+            'price': current['Close'],
+            'broke_level': previous['Low'],
+            'current_low': current['Low'],
+            'break_pct': break_percentage,
+            'recovery_pct': recovery_from_low,
+            'volume': current['Volume'],
+            'date': current.name.strftime('%Y-%m-%d')
+        }
+    
+    return False, None
     """Detecta Hammer Setup: martelo que rompeu mínima anterior e fechou verde"""
     if len(df) < 3:
         return False, None
