@@ -20,8 +20,7 @@ st.markdown('<h1 style="text-align:center;">Scanner TheStrat 📊</h1>', unsafe_
 # ==============================
 @st.cache_data(ttl=3600)
 def load_symbols():
-    default_symbols = ["AAPL","MSFT","TSLA","AMZN","NVDA","META","GOOGL","NFLX","AMD","IBM"]
-    return default_symbols
+    return ["AAPL","MSFT","TSLA","AMZN","NVDA","META","GOOGL","NFLX","AMD","IBM"]
 
 SYMBOLS = load_symbols()
 
@@ -76,41 +75,40 @@ def detect_strat_combo(df, lookback=3):
 # APP PRINCIPAL
 # ==============================
 def main():
-    # Layout horizontal para controles
-    col1, col2, col3, col4 = st.columns([2,2,2,1])
+    # ======== CONTROLES NO TOPO ========
+    st.markdown("### ⚙️ Configurações")
+    col1, col2, col3 = st.columns([2,2,1])
 
     with col1:
-        st.subheader("⏳ Timeframe")
         timeframes = {
             "Daily (1D)": ("1y", "1d"),
             "Weekly (1W)": ("2y", "1wk"),
             "Monthly (1M)": ("5y", "1mo")
         }
-        selected_timeframe = st.selectbox("", list(timeframes.keys()), index=0)
+        selected_timeframe = st.selectbox("⏳ Timeframe", list(timeframes.keys()), index=0)
 
     with col2:
-        st.subheader("📈 Símbolos")
-        max_symbols = st.slider("", 5, len(SYMBOLS), min(50, len(SYMBOLS)))
+        max_symbols = st.slider("📈 Máximo de símbolos", 5, len(SYMBOLS), min(50, len(SYMBOLS)))
 
     with col3:
-        st.subheader("⚙️ Opções")
-        start_button = st.button("🚀 Iniciar Scanner")
+        start_button = st.button("🚀 Iniciar Scanner", use_container_width=True)
 
-    with col4:
-        st.subheader("📊 Status")
-        status_placeholder = st.empty()
+    st.markdown("---")
 
     if start_button:
         period, interval = timeframes[selected_timeframe]
 
+        # ======== MÉTRICAS ========
         colm1, colm2, colm3 = st.columns(3)
         processed_metric = colm1.metric("Processados", "0")
         found_metric = colm2.metric("Setups", "0")
         progress_metric = colm3.metric("Progresso", "0%")
 
         progress_bar = st.progress(0)
+        status_placeholder = st.empty()
         results = []
 
+        # ======== LOOP PRINCIPAL ========
         for i, symbol in enumerate(SYMBOLS[:max_symbols]):
             status_placeholder.text(f"🔍 Analisando {symbol}...")
             df = get_stock_data(symbol, period, interval)
@@ -132,6 +130,7 @@ def main():
 
         status_placeholder.text("✅ Scanner concluído!")
 
+        # ======== RESULTADOS ========
         if results:
             st.success(f"{len(results)} setups encontrados!")
             df_results = pd.DataFrame(results)
