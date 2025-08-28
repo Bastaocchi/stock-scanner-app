@@ -3,14 +3,12 @@ import yfinance as yf
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 import time
 
 # Configuração da página
 st.set_page_config(
     page_title="Scanner de Setups Profissional",
-    page_icon="🎯",
+    page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -122,56 +120,15 @@ def get_stock_data(symbol, period='1y', interval='1d'):
         return None
 
 def create_candlestick_chart(df, symbol, setup_info=None):
-    """Cria gráfico de candlestick com destaque para setups"""
-    fig = go.Figure()
-    
-    fig.add_trace(go.Candlestick(
-        x=df.index,
-        open=df['Open'],
-        high=df['High'],
-        low=df['Low'],
-        close=df['Close'],
-        name=symbol,
-        increasing_line_color='green',
-        decreasing_line_color='red'
-    ))
-    
-    # Destacar setup se encontrado
-    if setup_info:
-        last_date = df.index[-1]
-        last_high = df.iloc[-1]['High']
-        
-        fig.add_annotation(
-            x=last_date,
-            y=last_high,
-            text=f"🎯 {setup_info['type']}",
-            showarrow=True,
-            arrowhead=2,
-            arrowsize=1,
-            arrowwidth=2,
-            arrowcolor="yellow",
-            ax=0,
-            ay=-40,
-            bgcolor="yellow",
-            font=dict(color="black", size=12)
-        )
-    
-    fig.update_layout(
-        title=f"{symbol} - Análise de Setup",
-        yaxis_title="Preço ($)",
-        xaxis_title="Data",
-        template="plotly_white",
-        height=400
-    )
-    
-    return fig
+    """Função removida - não usada mais"""
+    pass
 
 def main():
-    st.markdown('<h1 class="main-header">🎯 Scanner de Setups Profissional</h1>', unsafe_allow_html=True)
+    st.markdown('<h1 class="main-header">Scanner de Setups Profissional</h1>', unsafe_allow_html=True)
     st.markdown("**Análise automatizada de Inside Bars e Hammer Setups em 664 símbolos**")
     
     # Sidebar
-    st.sidebar.header("⚙️ Configurações")
+    st.sidebar.header("Configurações")
     
     # Seleção de timeframes
     timeframes = {
@@ -181,23 +138,23 @@ def main():
     }
     
     selected_timeframe = st.sidebar.selectbox(
-        "📊 Timeframe:",
+        "Timeframe:",
         list(timeframes.keys()),
         index=0
     )
     
     # Seleção de setups
-    st.sidebar.subheader("🔍 Setups para Detectar:")
+    st.sidebar.subheader("Setups para Detectar:")
     detect_inside_bar_flag = st.sidebar.checkbox("Inside Bar", value=True)
     detect_hammer_flag = st.sidebar.checkbox("Hammer Setup", value=True)
     
     # Limite de símbolos para teste
-    max_symbols = st.sidebar.slider("📈 Máximo de símbolos para analisar:", 10, 100, 50)
+    max_symbols = st.sidebar.slider("Máximo de símbolos para analisar:", 10, 664, 100)
     
     # Botão para iniciar scan
-    if st.sidebar.button("🚀 Iniciar Scanner", type="primary"):
+    if st.sidebar.button("Iniciar Scanner", type="primary"):
         if not detect_inside_bar_flag and not detect_hammer_flag:
-            st.error("❌ Selecione pelo menos um setup para detectar!")
+            st.error("Selecione pelo menos um setup para detectar!")
             return
             
         period, interval = timeframes[selected_timeframe]
@@ -230,7 +187,7 @@ def main():
         symbols_to_process = SYMBOLS[:max_symbols]
         
         for i, symbol in enumerate(symbols_to_process):
-            status_text.text(f"🔍 Analisando {symbol}...")
+            status_text.text(f"Analisando {symbol}...")
             
             try:
                 # Buscar dados
@@ -246,8 +203,7 @@ def main():
                         if is_inside:
                             found_setups.append({
                                 'symbol': symbol,
-                                'setup_info': info,
-                                'data': df
+                                'setup_info': info
                             })
                             setup_found = True
                             setup_info = info
@@ -258,8 +214,7 @@ def main():
                         if is_hammer:
                             found_setups.append({
                                 'symbol': symbol,
-                                'setup_info': info,
-                                'data': df
+                                'setup_info': info
                             })
                             setup_found = True
                             setup_info = info
@@ -280,89 +235,95 @@ def main():
             progress_metric.metric("Progresso", f"{progress*100:.1f}%")
             
             # Pequena pausa para não sobrecarregar
-            time.sleep(0.1)
+            time.sleep(0.05)
         
-        status_text.text("✅ Scanner concluído!")
+        status_text.text("Scanner concluído!")
         
-        # Mostrar resultados
+        # Mostrar resultados em tabela
         if found_setups:
-            st.success(f"🎯 **{len(found_setups)} setups encontrados!**")
+            st.success(f"**{len(found_setups)} setups encontrados!**")
             
             with results_container:
-                st.header("📊 Resultados Encontrados")
+                st.header("Resultados Encontrados")
                 
-                # Organizar por tipo de setup
+                # Criar DataFrame para exibição
+                results_data = []
+                for setup in found_setups:
+                    symbol = setup['symbol']
+                    info = setup['setup_info']
+                    
+                    if info['type'] == 'Inside Bar':
+                        results_data.append({
+                            'Symbol': symbol,
+                            'Setup': 'Inside Bar',
+                            'Price': f"${info['price']:.2f}",
+                            'Change %': f"{info['change_pct']:.2f}%",
+                            'Range': info['range'],
+                            'Volume': f"{info['volume']:,}",
+                            'Date': info['date'],
+                            'TradingView': f"https://www.tradingview.com/symbols/{symbol}/"
+                        })
+                    else:  # Hammer Setup
+                        results_data.append({
+                            'Symbol': symbol,
+                            'Setup': 'Hammer Setup',
+                            'Price': f"${info['price']:.2f}",
+                            'Recovery %': f"+{info['recovery_pct']:.2f}%",
+                            'Broke Level': f"${info['broke_level']:.2f}",
+                            'Volume': f"{info['volume']:,}",
+                            'Date': info['date'],
+                            'TradingView': f"https://www.tradingview.com/symbols/{symbol}/"
+                        })
+                
+                # Exibir tabela
+                df_results = pd.DataFrame(results_data)
+                st.dataframe(df_results, use_container_width=True)
+                
+                # Separar por tipo
                 inside_bars = [s for s in found_setups if s['setup_info']['type'] == 'Inside Bar']
                 hammers = [s for s in found_setups if s['setup_info']['type'] == 'Hammer Setup']
                 
                 if inside_bars:
-                    st.subheader("🟧 Inside Bars")
-                    
+                    st.subheader(f"Inside Bars ({len(inside_bars)})")
+                    inside_data = []
                     for setup in inside_bars:
-                        col1, col2 = st.columns([1, 2])
-                        
-                        with col1:
-                            st.markdown(f"""
-                            **{setup['symbol']}**
-                            - Preço: ${setup['setup_info']['price']:.2f}
-                            - Variação: {setup['setup_info']['change_pct']:.2f}%
-                            - Range: {setup['setup_info']['range']}
-                            - Data: {setup['setup_info']['date']}
-                            """)
-                        
-                        with col2:
-                            fig = create_candlestick_chart(
-                                setup['data'].tail(20), 
-                                setup['symbol'], 
-                                setup['setup_info']
-                            )
-                            st.plotly_chart(fig, use_container_width=True)
+                        info = setup['setup_info']
+                        inside_data.append({
+                            'Symbol': setup['symbol'],
+                            'Price': f"${info['price']:.2f}",
+                            'Change': f"{info['change_pct']:.2f}%",
+                            'Range': info['range'],
+                            'Volume': f"{info['volume']:,}",
+                            'Date': info['date']
+                        })
+                    st.dataframe(pd.DataFrame(inside_data), use_container_width=True)
                 
                 if hammers:
-                    st.subheader("🔨 Hammer Setups")
-                    
+                    st.subheader(f"Hammer Setups ({len(hammers)})")
+                    hammer_data = []
                     for setup in hammers:
-                        col1, col2 = st.columns([1, 2])
-                        
-                        with col1:
-                            st.markdown(f"""
-                            **{setup['symbol']}**
-                            - Preço: ${setup['setup_info']['price']:.2f}
-                            - Recuperação: +{setup['setup_info']['recovery_pct']:.2f}%
-                            - Rompeu: ${setup['setup_info']['broke_level']:.2f}
-                            - Data: {setup['setup_info']['date']}
-                            """)
-                        
-                        with col2:
-                            fig = create_candlestick_chart(
-                                setup['data'].tail(20), 
-                                setup['symbol'], 
-                                setup['setup_info']
-                            )
-                            st.plotly_chart(fig, use_container_width=True)
+                        info = setup['setup_info']
+                        hammer_data.append({
+                            'Symbol': setup['symbol'],
+                            'Price': f"${info['price']:.2f}",
+                            'Recovery': f"+{info['recovery_pct']:.2f}%",
+                            'Broke Level': f"${info['broke_level']:.2f}",
+                            'Volume': f"{info['volume']:,}",
+                            'Date': info['date']
+                        })
+                    st.dataframe(pd.DataFrame(hammer_data), use_container_width=True)
                 
                 # Botão de download dos resultados
-                if st.button("💾 Download Resultados CSV"):
-                    df_results = pd.DataFrame([
-                        {
-                            'Symbol': s['symbol'],
-                            'Setup Type': s['setup_info']['type'],
-                            'Price': s['setup_info']['price'],
-                            'Date': s['setup_info']['date'],
-                            'Details': str(s['setup_info'])
-                        }
-                        for s in found_setups
-                    ])
-                    
+                if st.button("Download Resultados CSV"):
                     csv = df_results.to_csv(index=False)
                     st.download_button(
-                        label="📊 Baixar CSV",
+                        label="Baixar CSV",
                         data=csv,
                         file_name=f"scanner_results_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
                         mime="text/csv"
                     )
         else:
-            st.warning("❌ Nenhum setup encontrado com os critérios selecionados. Tente:")
+            st.warning("Nenhum setup encontrado com os critérios selecionados. Tente:")
             st.info("• Aumentar o número de símbolos analisados\n• Testar timeframes diferentes\n• Verificar se o mercado teve movimentos recentes")
 
 if __name__ == "__main__":
