@@ -7,17 +7,17 @@ st.set_page_config(layout="wide")
 col1, col2, col3 = st.columns([2,3,1])
 
 with col1:
-    timeframe = st.selectbox("⏳ Timeframe", ["1D","1W","1M"])
+    timeframe = st.selectbox("Timeframe", ["1D","1W","1M"])
 
 with col2:
     setups = st.multiselect(
-        "🧩 Setups", 
+        "Setups", 
         ["Inside Bar", "Hammer", "2D Green", "Combos"], 
         default=["Inside Bar"]
     )
 
 with col3:
-    run = st.button("🚀 Scanner", use_container_width=True)
+    run = st.button("Iniciar Scanner", use_container_width=True)
 
 st.markdown("---")
 
