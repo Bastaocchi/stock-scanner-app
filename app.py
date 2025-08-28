@@ -148,36 +148,43 @@ def detect_inside_bar(df):
     return False, None
 
 def detect_2d_green_monthly(df):
-    """Detecta 2D Green Monthly: rompeu mínima da vela anterior e agora está verde"""
-    if len(df) < 3:
+    """Detecta 2D Green Monthly: rompeu mínima da vela mensal anterior, mas hoje está verde"""
+    if len(df) < 2:
         return False, None
     
-    current = df.iloc[-1]  # Vela atual
-    previous = df.iloc[-2]  # Vela anterior
+    current = df.iloc[-1]  # Vela mensal atual
+    previous = df.iloc[-2]  # Vela mensal anterior
     
     # Condições para 2D Green Monthly:
-    # 1. Rompeu mínima da vela anterior (low atual < low anterior)
-    # 2. Vela atual está verde (close > open)
-    # 3. Fechou acima da mínima anterior (recuperação)
+    # 1. Vela mensal atual rompeu a mínima da vela mensal anterior
+    # 2. Mas a vela mensal atual fechou verde (close > open)
     
-    broke_below_previous = current['Low'] < previous['Low']
-    is_green_candle = current['Close'] > current['Open']
-    closed_above_previous_low = current['Close'] > previous['Low']
+    broke_previous_monthly_low = current['Low'] < previous['Low']
+    monthly_candle_is_green = current['Close'] > current['Open']
     
-    is_2d_green_monthly = broke_below_previous and is_green_candle and closed_above_previous_low
+    is_2d_green_monthly = broke_previous_monthly_low and monthly_candle_is_green
     
     if is_2d_green_monthly:
-        # Calcular percentual de recuperação da mínima anterior
-        recovery_from_low = ((current['Close'] - current['Low']) / current['Low']) * 100
-        break_percentage = ((previous['Low'] - current['Low']) / previous['Low']) * 100
+        # Calcular métricas
+        break_amount = previous['Low'] - current['Low']
+        break_percentage = (break_amount / previous['Low']) * 100
+        
+        # Recuperação da vela mensal (do low ao close)
+        monthly_recovery = ((current['Close'] - current['Low']) / current['Low']) * 100
+        
+        # Variação mensal total
+        monthly_change = ((current['Close'] - current['Open']) / current['Open']) * 100
         
         return True, {
             'type': '2D Green Monthly',
             'price': current['Close'],
-            'broke_level': previous['Low'],
+            'open_price': current['Open'],
             'current_low': current['Low'],
+            'previous_low': previous['Low'],
+            'break_amount': break_amount,
             'break_pct': break_percentage,
-            'recovery_pct': recovery_from_low,
+            'monthly_recovery_pct': monthly_recovery,
+            'monthly_change_pct': monthly_change,
             'volume': current['Volume'],
             'date': current.name.strftime('%Y-%m-%d')
         }
@@ -252,11 +259,12 @@ def main():
         index=0
     )
     
-    # Seleção de setups
     st.sidebar.subheader("Setups para Detectar:")
     detect_inside_bar_flag = st.sidebar.checkbox("Inside Bar", value=True)
     detect_hammer_flag = st.sidebar.checkbox("Hammer Setup", value=True)
     detect_2d_green_flag = st.sidebar.checkbox("2D Green Monthly", value=True)
+    
+    st.sidebar.info("💡 2D Green Monthly: Recomendado usar com timeframe Monthly para melhor resultado")
     
     # Limite de símbolos para análise
     max_symbols = st.sidebar.slider("Máximo de símbolos para analisar:", 10, len(SYMBOLS), min(100, len(SYMBOLS)))
@@ -393,9 +401,10 @@ def main():
                             'Symbol': symbol,
                             'Setup': '2D Green Monthly',
                             'Price': f"${info['price']:.2f}",
-                            'Broke Level': f"${info['broke_level']:.2f}",
-                            'Break %': f"-{info['break_pct']:.2f}%",
-                            'Recovery %': f"+{info['recovery_pct']:.2f}%",
+                            'Monthly Change': f"+{info['monthly_change_pct']:.2f}%",
+                            'Previous Low': f"${info['previous_low']:.2f}",
+                            'Current Low': f"${info['current_low']:.2f}",
+                            'Break Amount': f"${info['break_amount']:.2f}",
                             'Volume': f"{info['volume']:,}",
                             'Date': info['date']
                         })
@@ -446,10 +455,11 @@ def main():
                         green_2d_data.append({
                             'Symbol': setup['symbol'],
                             'Price': f"${info['price']:.2f}",
-                            'Broke Level': f"${info['broke_level']:.2f}",
+                            'Monthly Change': f"+{info['monthly_change_pct']:.2f}%",
+                            'Previous Low': f"${info['previous_low']:.2f}",
                             'Current Low': f"${info['current_low']:.2f}",
-                            'Break %': f"-{info['break_pct']:.2f}%",
-                            'Recovery %': f"+{info['recovery_pct']:.2f}%",
+                            'Break Amount': f"${info['break_amount']:.2f}",
+                            'Recovery': f"+{info['monthly_recovery_pct']:.2f}%",
                             'Volume': f"{info['volume']:,}",
                             'Date': info['date']
                         })
