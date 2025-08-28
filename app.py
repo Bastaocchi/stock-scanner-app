@@ -1,19 +1,19 @@
 import streamlit as st
+import yfinance as yf
 import pandas as pd
 import numpy as np
-from datetime import datetime
-import yfinance as yf
+from datetime import datetime, timedelta
 import time
 
 # Configuração da página
 st.set_page_config(
-    page_title="Gerenciador de Símbolos",
+    page_title="Scanner de Setups Profissional",
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# CSS personalizado para interface moderna
+# CSS personalizado
 st.markdown("""
 <style>
     .main-header {
@@ -25,409 +25,548 @@ st.markdown("""
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
     }
-    .stats-card {
+    .metric-card {
         background: white;
         padding: 1rem;
         border-radius: 10px;
         box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         margin: 0.5rem 0;
-        border-left: 4px solid #2196F3;
     }
-    .success-msg {
-        background: #d4edda;
-        border: 1px solid #c3e6cb;
-        color: #155724;
-        padding: 1rem;
+    .setup-found {
+        background: linear-gradient(45deg, #2196F3, #1976D2);
+        color: white;
+        padding: 0.5rem 1rem;
         border-radius: 5px;
-        margin: 1rem 0;
+        margin: 0.2rem;
+        display: inline-block;
     }
-    .warning-msg {
-        background: #fff3cd;
-        border: 1px solid #ffeaa7;
-        color: #856404;
-        padding: 1rem;
-        border-radius: 5px;
-        margin: 1rem 0;
+    .stDataFrame {
+        font-size: 20px !important;
+    }
+    .stDataFrame td {
+        font-size: 20px !important;
+        padding: 15px !important;
+        line-height: 1.4 !important;
+    }
+    .stDataFrame th {
+        font-size: 22px !important;
+        font-weight: bold !important;
+        padding: 18px !important;
+        line-height: 1.4 !important;
+    }
+    div[data-testid="stDataFrame"] table {
+        font-size: 20px !important;
+    }
+    div[data-testid="stDataFrame"] table td,
+    div[data-testid="stDataFrame"] table th {
+        font-size: 20px !important;
+        padding: 15px !important;
+    }
+    .metric-container {
+        background: #f0f8ff;
+        border: 2px solid #2196F3;
+        border-radius: 10px;
+        padding: 10px;
+        text-align: center;
+    }
+    .stMarkdown h3 {
+        font-size: 1.8rem !important;
+        font-weight: bold !important;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# Função para carregar dados do Google Sheets
-@st.cache_data(ttl=300)  # Cache por 5 minutos
-def load_symbols_from_sheets(sheet_url):
-    """Carrega símbolos do Google Sheets"""
-    try:
-        # Converter URL para formato CSV
-        if '/edit' in sheet_url:
-            # Extrair o ID da planilha e GID
-            sheet_id = sheet_url.split('/d/')[1].split('/')[0]
-            
-            # Extrair GID se existir
-            if 'gid=' in sheet_url:
-                gid = sheet_url.split('gid=')[1].split('#')[0].split('&')[0]
-                csv_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv&gid={gid}"
-            else:
-                csv_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv"
-        else:
-            csv_url = sheet_url
-        
-        # Tentar carregar com diferentes encodings
-        try:
-            df = pd.read_csv(csv_url, encoding='utf-8')
-        except UnicodeDecodeError:
-            df = pd.read_csv(csv_url, encoding='latin1')
-        except:
-            # Se ainda falhar, tentar sem especificar encoding
-            df = pd.read_csv(csv_url)
-        
-        # Renomear Column 1 para Tag se existir
-        if 'Column 1' in df.columns:
-            df = df.rename(columns={'Column 1': 'Tag'})
-        
-        # Adicionar coluna Tag se não existir
-        if 'Tag' not in df.columns:
-            df['Tag'] = ""
-        
-        # Limpar dados
-        df = df.fillna("")
-        
-        # Remover linhas completamente vazias
-        df = df.dropna(how='all')
-        
-        return df
-    except Exception as e:
-        st.error(f"Erro ao carregar Google Sheets: {e}")
-        st.info("💡 Dica: Verifique se a planilha está pública (qualquer pessoa com link pode visualizar)")
-        return None
-
-# Função para validar ticker
-@st.cache_data(ttl=3600)  # Cache por 1 hora
-def validate_ticker(symbol):
-    """Valida se ticker existe no Yahoo Finance"""
-    try:
-        ticker = yf.Ticker(symbol)
-        info = ticker.info
-        return info.get('regularMarketPrice') is not None or info.get('symbol') == symbol
-    except:
-        return False
-
-# Função para obter informações do ticker
+# Função para carregar símbolos de diferentes fontes
 @st.cache_data(ttl=3600)
-def get_ticker_info(symbol):
-    """Obtém informações básicas do ticker"""
+def load_symbols():
+    """Carrega símbolos de CSV local ou Google Sheets"""
+    
+    # Opção 1: Tentar carregar de arquivo CSV local (se existir)
+    try:
+        import os
+        if os.path.exists('symbols.csv'):
+            df = pd.read_csv('symbols.csv')
+            if 'Symbol' in df.columns:
+                symbols = df['Symbol'].dropna().tolist()
+                st.sidebar.success(f"✅ Carregados {len(symbols)} símbolos do arquivo CSV")
+                return symbols
+    except Exception as e:
+        st.sidebar.warning(f"Não foi possível carregar CSV local: {e}")
+    
+    # Opção 2: Google Sheets (se URL fornecida)
+    google_sheet_url = st.sidebar.text_input(
+        "URL do Google Sheets (opcional):",
+        placeholder="https://docs.google.com/spreadsheets/d/...",
+        help="Cole a URL pública do seu Google Sheets com os símbolos"
+    )
+    
+    if google_sheet_url:
+        try:
+            # Converter URL do Google Sheets para CSV
+            if '/edit' in google_sheet_url:
+                csv_url = google_sheet_url.replace('/edit#gid=', '/export?format=csv&gid=')
+                csv_url = csv_url.replace('/edit', '/export?format=csv')
+            else:
+                csv_url = google_sheet_url
+            
+            df = pd.read_csv(csv_url)
+            
+            # Tentar encontrar coluna com símbolos
+            symbol_column = None
+            for col in ['Symbol', 'symbol', 'Ticker', 'ticker', 'SYMBOL']:
+                if col in df.columns:
+                    symbol_column = col
+                    break
+            
+            if symbol_column:
+                symbols = df[symbol_column].dropna().tolist()
+                st.sidebar.success(f"✅ Carregados {len(symbols)} símbolos do Google Sheets")
+                return symbols
+            else:
+                st.sidebar.error("Não foi possível encontrar coluna de símbolos. Use 'Symbol' como cabeçalho.")
+                
+        except Exception as e:
+            st.sidebar.error(f"Erro ao carregar Google Sheets: {e}")
+    
+    # Fallback: Lista padrão
+    default_symbols = ["A","AAL","AAPL","ABBV","ABNB","ABT","ACGL","ACN","ADBE","ADI","ADM","ADP","ADSK","AEE","AEP","AES","AFL","AFRM","AIG","AIZ","AJG","AKAM","ALB","ALGN","ALK","ALL","ALLE","AM","AMAT","AMCR","AMD","AME","AMGN","AMP","AMT","AMZN","ANET","AON","AOS","APA","APD","APH","APO","ARCC","ARE","ARTNA","ASML","ATO","AVB","AVGO","AVY","AWK","AXON","AXP","AZN","AZO","BA","BABA","BAC","BALL","BAX","BBDC","BBY","BDX","BE","BEN","BG","BIDU","BIIB","BILL","BIZD","BK","BKNG","BKR","BLDP","BLK","BMO","BMY","BNS","BP","BR","BRO","BSX","BX","BXP","BXSL","BYND","C","CAG","CAH","CAPL","CARR","CAT","CB","CBOE","CBRE","CCI","CCL","CCO","CDNS","CDW","CDZI","CEG","CF","CFG","CGBD","CHD","CHKP","CHRW","CHTR","CI","CINF","CL","CLX","CM","CMCSA","CME","CMG","CMI","CMS","CNC","CNI","CNP","CNQ","COF","COIN","COO","COP","COR","COST","CP","CPAY","CPB","CPRT","CPT","CRL","CRM","CRWD","CSCO","CSGP","CSIQ","CSX","CTAS","CTRA","CTSH","CTVA","CVLT","CVS","CVX","CWT","CYBR","CZR","D","DAL","DASH","DAY","DD","DDOG","DE","DECK","DELL","DG","DGX","DHI","DHR","DIS","DLR","DLTR","DMLP","DOC","DOCN","DOCU","DOL","DOV","DOW","DPZ","DQ","DRI","DTE","DUK","DVA","DVN","DXCM","EA","EBAY","ECL","ED","EFX","EG","EIX","EL","ELV","EME","EMN","EMR","ENB","ENPH","EOG","EPAM","EPD","EQIX","EQR","EQT","ERIE","ES","ESS","ESTC","ET","ETN","ETR","EVRG","EW","EXC","EXE","EXPD","EXPE","EXR","F","FANG","FAST","FCEL","FCX","FDS","FDX","FE","FFIV","FI","FICO","FIS","FITB","FLEX","FNF","FNV","FOUR","FOX","FOXA","FROG","FRT","FSK","FSLR","FTNT","FTV","GAIN","GBDC","GD","GDDY","GDOT","GE","GEHC","GEL","GEN","GEV","GILD","GIS","GL","GLW","GM","GNRC","GOOG","GOOGL","GPC","GPN","GRMN","GS","GSBD","GSK","GWRE","GWRS","GWW","HAL","HAS","HBAN","HCA","HD","HESM","HIG","HII","HLT","HOLX","HON","HOOD","HPE","HPQ","HRL","HSIC","HST","HSY","HTGC","HUBB","HUM","HWM","HYLN","IBKR","IBM","ICE","IDXX","IESC","IEX","IFF","INCY","INTC","INTU","INVH","IP","IPG","IQV","IR","IRM","ISRG","IT","ITW","IVZ","J","JBHT","JBL","JBLU","JCI","JD","JKHY","JKS","JNJ","JPM","K","KDP","KEY","KEYS","KHC","KIM","KKR","KLAC","KMB","KMI","KMX","KNTK","KO","KR","KVUE","L","LCID","LDOS","LEN","LH","LHX","LI","LII","LIN","LKQ","LLY","LMT","LNT","LOW","LRCX","LULU","LUV","LVS","LW","LYB","LYV","MA","MAA","MAIN","MAR","MAXN","MCD","MCHP","MCK","MCO","MDB","MDLZ","MDT","MDU","MET","META","MFC","MGM","MHK","MKC","MKTX","MLM","MMC","MMM","MNST","MO","MOH","MOS","MPC","MPLX","MPWR","MRK","MRNA","MRVL","MS","MSBI","MSCI","MSEX","MSFT","MSI","MTB","MTCH","MTD","MTZ","MU","NCLH","NDAQ","NDSN","NEE","NEM","NET","NEWT","NFG","NFLX","NI","NIO","NJR","NKE","NOC","NOW","NRG","NSC","NSIT","NTAP","NTES","NTRS","NU","NUE","NVDA","NVO","NVR","NWS","NWSA","NXPI","O","OCCI","ODFL","OGS","OKE","OKTA","OMC","ON","OPEN","ORCL","ORLY","OTEX","OTIS","OXY","PAA","PANW","PAYC","PAYX","PBT","PCAR","PCG","PDD","PEG","PEP","PFE","PFG","PG","PGR","PH","PHM","PINS","PKG","PLBY","PLD","PLTR","PLUG","PM","PNC","PNR","PNW","PODD","POOL","PPG","PPL","PRIM","PRLB","PRU","PSA","PSEC","PSTG","PSX","PTC","PURE","PWR","PYPL","QCOM","QLYS","QRVO","QSR","RBA","RBLX","RCL","REAL","REG","REGN","RF","RIVN","RJF","RL","RMD","ROAD","ROK","ROKU","ROL","ROP","ROST","RPD","RSG","RTX","RUN","RVTY","RXO","RY","S","SAIA","SAIL","SAP","SBAC","SBUX","SCHW","SEDG","SHEL","SHOP","SHW","SJM","SJT","SKYW","SLB","SLF","SMCI","SNA","SNAP","SNOW","SNPS","SNY","SO","SOFI","SOL","SOLV","SPG","SPGI","SPWR","SRE","STC","STE","STLD","STRL","STT","STX","STZ","SU","SW","SWK","SWKS","SWX","SYF","SYK","SYY","T","TAP","TCEHY","TD","TDG","TDY","TEAM","TECH","TEL","TENB","TER","TFC","TFI","TGT","TJX","TKO","TM","TMO","TMUS","TPL","TPR","TRGP","TRI","TRMB","TROW","TRV","TSCO","TSLA","TSLX","TSM","TSN","TT","TTD","TTE","TTWO","TWLO","TXN","TXT","TYL","U","UAL","UBER","UDR","UGI","UHS","UL","ULTA","UNH","UNP","UPS","UPST","URI","USAC","USB","USFD","V","VEEV","VICI","VLO","VLTO","VMC","VOC","VRNS","VRSK","VRSN","VRTX","VST","VTR","VTRS","VZ","WAB","WAT","WBA","WBD","WCN","WDAY","WDC","WEC","WELL","WES","WFC","WM","WMB","WMT","WPM","WRB","WSM","WSO","WST","WTW","WY","WYNN","XEL","XOM","XPEV","XYL","XYZ","YORW","YUM","ZBH","ZBRA","ZM","ZS","ZTS"]
+    
+    st.sidebar.info(f"📋 Usando lista padrão com {len(default_symbols)} símbolos")
+    return default_symbols
+
+# Carregar símbolos
+SYMBOLS = load_symbols()
+
+def detect_inside_bar(df):
+    """Detecta Inside Bar: máxima atual < máxima anterior E mínima atual > mínima anterior"""
+    if len(df) < 2:
+        return False, None
+    
+    current = df.iloc[-1]
+    previous = df.iloc[-2]
+    
+    is_inside = (current['High'] < previous['High']) and (current['Low'] > previous['Low'])
+    
+    if is_inside:
+        change_pct = ((current['Close'] - current['Open']) / current['Open']) * 100
+        return True, {
+            'type': 'Inside Bar',
+            'price': current['Close'],
+            'change_pct': change_pct,
+            'volume': current['Volume'],
+            'date': current.name.strftime('%Y-%m-%d')
+        }
+    
+    return False, None
+
+def detect_hammer_setup(df):
+    """Detecta Hammer Setup: martelo que rompeu mínima anterior e fechou verde"""
+    if len(df) < 3:
+        return False, None
+    
+    current = df.iloc[-1]
+    previous = df.iloc[-2]
+    
+    # Condições do hammer
+    body_size = abs(current['Close'] - current['Open'])
+    total_range = current['High'] - current['Low']
+    lower_shadow = min(current['Open'], current['Close']) - current['Low']
+    upper_shadow = current['High'] - max(current['Open'], current['Close'])
+    
+    # Critérios para hammer
+    is_small_body = body_size <= 0.4 * total_range
+    is_long_lower_shadow = lower_shadow >= 2 * body_size
+    is_short_upper_shadow = upper_shadow <= body_size
+    broke_below = current['Low'] < previous['Low']
+    closed_green = current['Close'] > current['Open']
+    
+    is_hammer = is_small_body and is_long_lower_shadow and is_short_upper_shadow
+    is_hammer_setup = is_hammer and broke_below and closed_green
+    
+    if is_hammer_setup:
+        recovery_pct = ((current['Close'] - current['Low']) / current['Low']) * 100
+        return True, {
+            'type': 'Hammer Setup',
+            'price': current['Close'],
+            'recovery_pct': recovery_pct,
+            'broke_level': previous['Low'],
+            'volume': current['Volume'],
+            'date': current.name.strftime('%Y-%m-%d')
+        }
+    
+    return False, None
+
+def detect_2d_green_monthly(df):
+    """Detecta 2D Green Monthly: rompeu mínima da vela mensal anterior, mas hoje está verde, SEM superar a máxima anterior"""
+    if len(df) < 2:
+        return False, None
+    
+    current = df.iloc[-1]  # Vela mensal atual
+    previous = df.iloc[-2]  # Vela mensal anterior
+    
+    # Condições para 2D Green Monthly:
+    # 1. Vela mensal atual rompeu a mínima da vela mensal anterior
+    # 2. Vela mensal atual fechou verde (close > open)
+    # 3. Vela mensal atual NÃO superou a máxima da vela mensal anterior
+    
+    broke_previous_monthly_low = current['Low'] < previous['Low']
+    monthly_candle_is_green = current['Close'] > current['Open']
+    did_not_exceed_previous_high = current['High'] <= previous['High']
+    
+    is_2d_green_monthly = broke_previous_monthly_low and monthly_candle_is_green and did_not_exceed_previous_high
+    
+    if is_2d_green_monthly:
+        # Calcular métricas
+        break_amount = previous['Low'] - current['Low']
+        break_percentage = (break_amount / previous['Low']) * 100
+        
+        # Recuperação da vela mensal (do low ao close)
+        monthly_recovery = ((current['Close'] - current['Low']) / current['Low']) * 100
+        
+        # Variação mensal total
+        monthly_change = ((current['Close'] - current['Open']) / current['Open']) * 100
+        
+        return True, {
+            'type': '2D Green Monthly',
+            'price': current['Close'],
+            'open_price': current['Open'],
+            'current_low': current['Low'],
+            'current_high': current['High'],
+            'previous_low': previous['Low'],
+            'previous_high': previous['High'],
+            'break_amount': break_amount,
+            'break_pct': break_percentage,
+            'monthly_recovery_pct': monthly_recovery,
+            'monthly_change_pct': monthly_change,
+            'volume': current['Volume'],
+            'date': current.name.strftime('%Y-%m-%d')
+        }
+    
+    return False, None
+    """Detecta Hammer Setup: martelo que rompeu mínima anterior e fechou verde"""
+    if len(df) < 3:
+        return False, None
+    
+    current = df.iloc[-1]
+    previous = df.iloc[-2]
+    
+    # Condições do hammer
+    body_size = abs(current['Close'] - current['Open'])
+    total_range = current['High'] - current['Low']
+    lower_shadow = min(current['Open'], current['Close']) - current['Low']
+    upper_shadow = current['High'] - max(current['Open'], current['Close'])
+    
+    # Critérios para hammer
+    is_small_body = body_size <= 0.4 * total_range
+    is_long_lower_shadow = lower_shadow >= 2 * body_size
+    is_short_upper_shadow = upper_shadow <= body_size
+    broke_below = current['Low'] < previous['Low']
+    closed_green = current['Close'] > current['Open']
+    
+    is_hammer = is_small_body and is_long_lower_shadow and is_short_upper_shadow
+    is_hammer_setup = is_hammer and broke_below and closed_green
+    
+    if is_hammer_setup:
+        recovery_pct = ((current['Close'] - current['Low']) / current['Low']) * 100
+        return True, {
+            'type': 'Hammer Setup',
+            'price': current['Close'],
+            'recovery_pct': recovery_pct,
+            'broke_level': previous['Low'],
+            'volume': current['Volume'],
+            'date': current.name.strftime('%Y-%m-%d')
+        }
+    
+    return False, None
+
+@st.cache_data(ttl=3600)  # Cache por 1 hora
+def get_stock_data(symbol, period='1y', interval='1d'):
+    """Busca dados da ação usando yfinance"""
     try:
         ticker = yf.Ticker(symbol)
-        info = ticker.info
-        return {
-            'company': info.get('longName', ''),
-            'sector': info.get('sector', ''),
-            'industry': info.get('industry', ''),
-            'market_cap': info.get('marketCap', 0)
-        }
-    except:
+        data = ticker.history(period=period, interval=interval)
+        if data.empty:
+            return None
+        return data
+    except Exception as e:
+        st.sidebar.error(f"Erro em {symbol}: {str(e)}")
         return None
 
 def main():
-    st.markdown('<h1 class="main-header">Gerenciador de Símbolos</h1>', unsafe_allow_html=True)
-    st.markdown("**Gerencie seus tickers, setores e tags para análise**")
+    st.markdown('<h1 class="main-header">Scanner de Setups Profissional</h1>', unsafe_allow_html=True)
+    st.markdown("**Análise automatizada de Inside Bars, Hammer Setups e 2D Green Monthly em até 664 símbolos**")
     
     # Sidebar
-    st.sidebar.header("⚙️ Configurações")
+    st.sidebar.header("Configurações")
     
-    # URL do Google Sheets
-    sheet_url = st.sidebar.text_input(
-        "🔗 URL do Google Sheets:",
-        value="https://docs.google.com/spreadsheets/d/1NMCkkcrTFOm1ZoOiImzzRRFd6NEn5kMPTkuc5j_3DcQ/edit?gid=744859441#gid=744859441",
-        help="Cole a URL do seu Google Sheets público"
-    )
+    # Seleção de timeframes
+    timeframes = {
+        "Daily (1D)": ("1y", "1d"),
+        "Weekly (1W)": ("2y", "1wk"), 
+        "Monthly (1M)": ("5y", "1mo")
+    }
     
-    # Botão para recarregar dados
-    if st.sidebar.button("🔄 Recarregar do Sheets"):
-        st.cache_data.clear()
-        st.rerun()
+    # Seleção de setups primeiro para condicionar timeframes
+    st.sidebar.subheader("Setups para Detectar:")
+    detect_inside_bar_flag = st.sidebar.checkbox("Inside Bar", value=True)
+    detect_hammer_flag = st.sidebar.checkbox("Hammer Setup", value=True)
+    detect_2d_green_flag = st.sidebar.checkbox("2D Green Monthly", value=False)
     
-    # Separador
-    st.sidebar.markdown("---")
-    
-    # Carregar dados
-    if sheet_url:
-        df = load_symbols_from_sheets(sheet_url)
-        
-        if df is not None:
-            st.sidebar.success(f"✅ {len(df)} símbolos carregados")
-            
-            # Estatísticas na sidebar
-            st.sidebar.subheader("📊 Estatísticas")
-            total_symbols = len(df)
-            unique_sectors = len(df['TradingView_Sector'].dropna().unique()) if 'TradingView_Sector' in df.columns else 0
-            unique_industries = len(df['TradingView_Industry'].dropna().unique()) if 'TradingView_Industry' in df.columns else 0
-            symbols_with_tags = len(df[df['Tag'].str.strip() != ""]) if 'Tag' in df.columns else 0
-            
-            st.sidebar.metric("Total de Símbolos", total_symbols)
-            st.sidebar.metric("Setores Únicos", unique_sectors)
-            st.sidebar.metric("Indústrias Únicas", unique_industries)
-            st.sidebar.metric("Com Tags", symbols_with_tags)
-        else:
-            st.error("❌ Não foi possível carregar os dados do Google Sheets")
-            return
+    # Condicionar seleção de timeframe baseado no setup 2D Green Monthly
+    if detect_2d_green_flag:
+        st.sidebar.info("🔒 2D Green Monthly selecionado - Timeframe fixado em Monthly")
+        selected_timeframe = "Monthly (1M)"
+        st.sidebar.markdown("**Timeframe: Monthly (1M)** *(fixo para 2D Green)*")
     else:
-        st.warning("⚠️ Por favor, insira a URL do Google Sheets na sidebar")
-        return
+        selected_timeframe = st.sidebar.selectbox(
+            "Timeframe:",
+            list(timeframes.keys()),
+            index=0
+        )
     
-    # Tabs principais
-    tab1, tab2, tab3, tab4 = st.tabs(["📋 Visualizar", "➕ Adicionar", "🏷️ Gerenciar Tags", "📊 Estatísticas"])
+    # Limite de símbolos para análise
+    max_symbols = st.sidebar.slider("Máximo de símbolos para analisar:", 10, len(SYMBOLS), min(100, len(SYMBOLS)))
     
-    with tab1:
-        st.subheader("📋 Visualizar Símbolos")
+    # Botão para iniciar scan
+    if st.sidebar.button("Iniciar Scanner", type="primary"):
+        if not detect_inside_bar_flag and not detect_hammer_flag and not detect_2d_green_flag:
+            st.error("Selecione pelo menos um setup para detectar!")
+            return
+            
+        period, interval = timeframes[selected_timeframe]
         
-        # Filtros
+        # Métricas em tempo real
         col1, col2, col3, col4 = st.columns(4)
         
         with col1:
-            sector_filter = st.selectbox(
-                "Filtrar por Setor:",
-                ["Todos"] + sorted(df['Sector_SPDR'].dropna().unique().tolist()) if 'Sector_SPDR' in df.columns else ["Todos"],
-                key="sector_filter_tab1"
-            )
-        
+            processed_metric = st.metric("Processados", "0")
         with col2:
-            etf_filter = st.selectbox(
-                "Filtrar por ETF:",
-                ["Todos"] + sorted(df['ETF_Symbol'].dropna().unique().tolist()) if 'ETF_Symbol' in df.columns else ["Todos"],
-                key="etf_filter_tab1"
-            )
-        
+            found_metric = st.metric("Setups Encontrados", "0")
         with col3:
-            tag_filter = st.selectbox(
-                "Filtrar por Tag:",
-                ["Todas"] + sorted([tag for tag in df['Tag'].dropna().unique() if tag.strip()]) if 'Tag' in df.columns else ["Todas"],
-                key="tag_filter_tab1"
-            )
-        
+            errors_metric = st.metric("Erros", "0")
         with col4:
-            search_term = st.text_input("🔍 Buscar Symbol/Company:", key="search_tab1")
+            progress_metric = st.metric("Progresso", "0%")
         
-        # Aplicar filtros
-        filtered_df = df.copy()
+        # Barra de progresso
+        progress_bar = st.progress(0)
+        status_text = st.empty()
         
-        if sector_filter != "Todos" and 'Sector_SPDR' in filtered_df.columns:
-            filtered_df = filtered_df[filtered_df['Sector_SPDR'] == sector_filter]
+        # Containers para resultados
+        results_container = st.container()
         
-        if etf_filter != "Todos" and 'ETF_Symbol' in filtered_df.columns:
-            filtered_df = filtered_df[filtered_df['ETF_Symbol'] == etf_filter]
+        # Variáveis para tracking
+        processed_count = 0
+        found_setups = []
+        error_count = 0
         
-        if tag_filter != "Todas" and 'Tag' in filtered_df.columns:
-            filtered_df = filtered_df[filtered_df['Tag'] == tag_filter]
+        # Processar símbolos
+        symbols_to_process = SYMBOLS[:max_symbols]
         
-        if search_term:
-            mask = (
-                filtered_df['Symbol'].str.contains(search_term, case=False, na=False) |
-                filtered_df['Company'].str.contains(search_term, case=False, na=False)
-            )
-            filtered_df = filtered_df[mask]
-        
-        # Mostrar resultados
-        st.info(f"📊 Mostrando {len(filtered_df)} de {len(df)} símbolos")
-        
-        # Preparar dados para exibição
-        display_columns = ['Symbol', 'Company', 'Sector_SPDR', 'ETF_Symbol', 'Tag']
-        available_columns = [col for col in display_columns if col in filtered_df.columns]
-        
-        if len(filtered_df) > 0:
-            # Criar tabela HTML customizada
-            display_df = filtered_df[available_columns].copy()
+        for i, symbol in enumerate(symbols_to_process):
+            status_text.text(f"Analisando {symbol}...")
             
-            # Limitar Company name para não quebrar layout
-            if 'Company' in display_df.columns:
-                display_df['Company'] = display_df['Company'].str[:50] + '...'
-            
-            html_table = display_df.to_html(escape=False, index=False)
-            html_table = html_table.replace('<table', '<table style="font-size: 16px; width: 100%;"')
-            html_table = html_table.replace('<th', '<th style="font-size: 18px; font-weight: bold; padding: 12px; background-color: #2196F3; color: white;"')
-            html_table = html_table.replace('<td', '<td style="font-size: 16px; padding: 10px; border-bottom: 1px solid #ddd;"')
-            
-            st.markdown(html_table, unsafe_allow_html=True)
-            
-            # Botão de download
-            csv = display_df.to_csv(index=False)
-            st.download_button(
-                label="📥 Download CSV",
-                data=csv,
-                file_name=f"symbols_filtered_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
-                mime="text/csv"
-            )
-        else:
-            st.warning("🔍 Nenhum símbolo encontrado com os filtros aplicados")
-    
-    with tab2:
-        st.subheader("➕ Adicionar Novo Símbolo")
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            new_symbol = st.text_input("Ticker (Ex: AAPL):", key="new_symbol").upper()
-            new_company = st.text_input("Nome da Empresa:", key="new_company")
-            new_tag = st.text_input("Tag (opcional):", key="new_tag")
-        
-        with col2:
-            if 'Sector_SPDR' in df.columns:
-                sectors = sorted(df['Sector_SPDR'].dropna().unique())
-                new_sector_spdr = st.selectbox("Setor SPDR:", [""] + sectors, key="new_sector")
-            
-            if 'ETF_Symbol' in df.columns:
-                etfs = sorted(df['ETF_Symbol'].dropna().unique())
-                new_etf = st.selectbox("ETF Symbol:", [""] + etfs, key="new_etf")
-        
-        # Botão de validação
-        if new_symbol:
-            if st.button(f"🔍 Validar {new_symbol}"):
-                with st.spinner(f"Validando {new_symbol}..."):
-                    if validate_ticker(new_symbol):
-                        st.success(f"✅ {new_symbol} é válido!")
-                        
-                        # Tentar obter informações automáticas
-                        info = get_ticker_info(new_symbol)
-                        if info:
-                            st.info(f"📋 Informações encontradas: {info['company']} - {info['sector']}")
-                    else:
-                        st.error(f"❌ {new_symbol} não foi encontrado no Yahoo Finance")
-        
-        # Botão para adicionar (simulação - em produção salvaria no Google Sheets)
-        if st.button("➕ Adicionar Símbolo"):
-            if new_symbol:
-                st.success(f"✅ {new_symbol} seria adicionado!")
-                st.info("💡 Em produção, isso atualizaria seu Google Sheets automaticamente")
-            else:
-                st.error("❌ Digite um símbolo válido")
-    
-    with tab3:
-        st.subheader("🏷️ Gerenciar Tags")
-        
-        if 'Tag' in df.columns:
-            # Estatísticas de tags
-            tag_counts = df['Tag'].value_counts()
-            tag_counts = tag_counts[tag_counts.index != ""]  # Remover tags vazias
-            
-            if len(tag_counts) > 0:
-                st.write("**Tags existentes:**")
+            try:
+                # Buscar dados
+                df = get_stock_data(symbol, period, interval)
                 
-                # Mostrar tags em colunas
-                cols = st.columns(min(3, len(tag_counts)))
-                for i, (tag, count) in enumerate(tag_counts.head(9).items()):
-                    with cols[i % 3]:
-                        st.metric(f"#{tag}", count)
-                
-                # Editor de tags em lote
-                st.subheader("✏️ Editor de Tags em Lote")
-                
-                col1, col2 = st.columns(2)
-                
-                with col1:
-                    # Selecionar símbolos por filtro
-                    bulk_sector = st.selectbox(
-                        "Selecionar por Setor:",
-                        [""] + sorted(df['Sector_SPDR'].dropna().unique().tolist()),
-                        key="bulk_sector"
-                    )
-                
-                with col2:
-                    new_bulk_tag = st.text_input("Nova Tag para aplicar:", key="bulk_tag")
-                
-                if bulk_sector and new_bulk_tag:
-                    affected_symbols = df[df['Sector_SPDR'] == bulk_sector]['Symbol'].tolist()
-                    st.info(f"📊 Isso aplicaria a tag '{new_bulk_tag}' para {len(affected_symbols)} símbolos do setor {bulk_sector}")
+                if df is not None and len(df) >= 10:
+                    setup_found = False
                     
-                    if st.button("🔄 Aplicar Tag em Lote"):
-                        st.success(f"✅ Tag '{new_bulk_tag}' aplicada a {len(affected_symbols)} símbolos!")
-                        st.info("💡 Em produção, isso atualizaria seu Google Sheets")
-            else:
-                st.info("📝 Nenhuma tag encontrada. Comece adicionando tags aos seus símbolos!")
-        
-        # Sugestões de tags
-        st.subheader("💡 Sugestões de Tags")
-        
-        suggestions = {
-            "🎯 Estratégia": ["dayrade", "swing", "long-term", "scalping"],
-            "📊 Watchlist": ["favorites", "earnings", "breakout", "momentum"],
-            "⚠️ Risco": ["high-vol", "conservative", "speculative", "blue-chip"],
-            "📈 Estilo": ["growth", "value", "dividend", "penny"],
-            "🔄 Status": ["active", "watchlist", "sold", "researching"]
-        }
-        
-        for category, tags in suggestions.items():
-            st.write(f"**{category}:** {', '.join(tags)}")
-    
-    with tab4:
-        st.subheader("📊 Estatísticas Detalhadas")
-        
-        # Métricas principais
-        col1, col2, col3, col4 = st.columns(4)
-        
-        with col1:
-            st.metric("📈 Total de Símbolos", len(df))
-        
-        with col2:
-            unique_companies = len(df['Company'].dropna().unique()) if 'Company' in df.columns else 0
-            st.metric("🏢 Empresas Únicas", unique_companies)
-        
-        with col3:
-            if 'Sector_SPDR' in df.columns:
-                unique_sectors = len(df['Sector_SPDR'].dropna().unique())
-                st.metric("🏭 Setores", unique_sectors)
-        
-        with col4:
-            if 'Tag' in df.columns:
-                tagged_symbols = len(df[df['Tag'].str.strip() != ""])
-                st.metric("🏷️ Com Tags", tagged_symbols)
-        
-        # Distribuição por setor
-        if 'Sector_SPDR' in df.columns:
-            st.subheader("📊 Distribuição por Setor SPDR")
-            sector_dist = df['Sector_SPDR'].value_counts()
+                    # Detectar Inside Bar
+                    if detect_inside_bar_flag:
+                        is_inside, info = detect_inside_bar(df)
+                        if is_inside:
+                            found_setups.append({
+                                'symbol': symbol,
+                                'setup_info': info
+                            })
+                            setup_found = True
+                    
+                    # Detectar Hammer Setup
+                    if detect_hammer_flag and not setup_found:
+                        is_hammer, info = detect_hammer_setup(df)
+                        if is_hammer:
+                            found_setups.append({
+                                'symbol': symbol,
+                                'setup_info': info
+                            })
+                            setup_found = True
+                    
+                    # Detectar 2D Green Monthly
+                    if detect_2d_green_flag and not setup_found:
+                        is_2d_green, info = detect_2d_green_monthly(df)
+                        if is_2d_green:
+                            found_setups.append({
+                                'symbol': symbol,
+                                'setup_info': info
+                            })
+                            setup_found = True
+                
+                processed_count += 1
+                
+            except Exception as e:
+                error_count += 1
+                st.sidebar.error(f"Erro em {symbol}: {str(e)}")
             
-            # Criar gráfico de barras simples com HTML
-            chart_data = []
-            for sector, count in sector_dist.head(10).items():
-                percentage = (count / len(df)) * 100
-                chart_data.append({
-                    'Setor': sector,
-                    'Quantidade': count,
-                    'Percentual': f"{percentage:.1f}%"
-                })
+            # Atualizar métricas
+            progress = (i + 1) / len(symbols_to_process)
+            progress_bar.progress(progress)
             
-            chart_df = pd.DataFrame(chart_data)
+            processed_metric.metric("Processados", str(processed_count))
+            found_metric.metric("Setups Encontrados", str(len(found_setups)))
+            errors_metric.metric("Erros", str(error_count))
+            progress_metric.metric("Progresso", f"{progress*100:.1f}%")
             
-            # Tabela HTML customizada
-            html_chart = chart_df.to_html(escape=False, index=False)
-            html_chart = html_chart.replace('<table', '<table style="font-size: 16px; width: 100%;"')
-            html_chart = html_chart.replace('<th', '<th style="font-size: 18px; font-weight: bold; padding: 12px; background-color: #4CAF50; color: white;"')
-            html_chart = html_chart.replace('<td', '<td style="font-size: 16px; padding: 10px; border-bottom: 1px solid #ddd;"')
-            
-            st.markdown(html_chart, unsafe_allow_html=True)
+            # Pequena pausa para não sobrecarregar
+            time.sleep(0.05)
         
-        # Distribuição por ETF
-        if 'ETF_Symbol' in df.columns:
-            st.subheader("📊 Distribuição por ETF")
-            etf_dist = df['ETF_Symbol'].value_counts().head(10)
+        status_text.text("Scanner concluído!")
+        
+        # Mostrar resultados em tabela
+        if found_setups:
+            st.success(f"**{len(found_setups)} setups encontrados!**")
             
-            etf_data = []
-            for etf, count in etf_dist.items():
-                percentage = (count / len(df)) * 100
-                etf_data.append({
-                    'ETF': etf,
-                    'Quantidade': count,
-                    'Percentual': f"{percentage:.1f}%"
-                })
-            
-            etf_df = pd.DataFrame(etf_data)
-            
-            # Tabela HTML customizada
-            html_etf = etf_df.to_html(escape=False, index=False)
-            html_etf = html_etf.replace('<table', '<table style="font-size: 16px; width: 100%;"')
-            html_etf = html_etf.replace('<th', '<th style="font-size: 18px; font-weight: bold; padding: 12px; background-color: #FF9800; color: white;"')
-            html_etf = html_etf.replace('<td', '<td style="font-size: 16px; padding: 10px; border-bottom: 1px solid #ddd;"')
-            
-            st.markdown(html_etf, unsafe_allow_html=True)
+            with results_container:
+                st.header("Resultados Encontrados")
+                
+                # Criar DataFrame para exibição
+                results_data = []
+                for setup in found_setups:
+                    symbol = setup['symbol']
+                    info = setup['setup_info']
+                    
+                    if info['type'] == 'Inside Bar':
+                        results_data.append({
+                            'Symbol': symbol,
+                            'Setup': 'Inside Bar',
+                            'Price': f"${info['price']:.2f}",
+                            'Change %': f"{info['change_pct']:.2f}%",
+                            'Volume': f"{info['volume']:,}",
+                            'Date': info['date']
+                        })
+                    elif info['type'] == 'Hammer Setup':
+                        results_data.append({
+                            'Symbol': symbol,
+                            'Setup': 'Hammer Setup',
+                            'Price': f"${info['price']:.2f}",
+                            'Recovery %': f"+{info['recovery_pct']:.2f}%",
+                            'Broke Level': f"${info['broke_level']:.2f}",
+                            'Volume': f"{info['volume']:,}",
+                            'Date': info['date']
+                        })
+                    elif info['type'] == '2D Green Monthly':
+                        results_data.append({
+                            'Symbol': symbol,
+                            'Setup': '2D Green Monthly',
+                            'Price': f"${info['price']:.2f}",
+                            'Monthly Change': f"+{info['monthly_change_pct']:.2f}%",
+                            'Previous Low': f"${info['previous_low']:.2f}",
+                            'Previous High': f"${info['previous_high']:.2f}",
+                            'Current Low': f"${info['current_low']:.2f}",
+                            'Current High': f"${info['current_high']:.2f}",
+                            'Break Amount': f"${info['break_amount']:.2f}",
+                            'Volume': f"{info['volume']:,}",
+                            'Date': info['date']
+                        })
+                
+                # Exibir tabela com estilo customizado
+                st.markdown("### 📊 Tabela de Resultados")
+                
+                # Usar st.markdown com HTML para controlar fonte
+                html_table = df_results.to_html(escape=False, index=False)
+                html_table = html_table.replace('<table', '<table style="font-size: 18px; width: 100%;"')
+                html_table = html_table.replace('<th', '<th style="font-size: 20px; font-weight: bold; padding: 12px; background-color: #2196F3; color: white;"')
+                html_table = html_table.replace('<td', '<td style="font-size: 18px; padding: 10px; border-bottom: 1px solid #ddd;"')
+                
+                st.markdown(html_table, unsafe_allow_html=True)
+                
+                # Separar por tipo
+                inside_bars = [s for s in found_setups if s['setup_info']['type'] == 'Inside Bar']
+                hammers = [s for s in found_setups if s['setup_info']['type'] == 'Hammer Setup']
+                green_2d = [s for s in found_setups if s['setup_info']['type'] == '2D Green Monthly']
+                
+                if inside_bars:
+                    st.subheader(f"Inside Bars ({len(inside_bars)})")
+                    inside_data = []
+                    for setup in inside_bars:
+                        info = setup['setup_info']
+                        inside_data.append({
+                            'Symbol': setup['symbol'],
+                            'Price': f"${info['price']:.2f}",
+                            'Change': f"{info['change_pct']:.2f}%",
+                            'Volume': f"{info['volume']:,}",
+                            'Date': info['date']
+                        })
+                    
+                    # Tabela HTML customizada
+                    inside_df = pd.DataFrame(inside_data)
+                    html_inside = inside_df.to_html(escape=False, index=False)
+                    html_inside = html_inside.replace('<table', '<table style="font-size: 18px; width: 100%;"')
+                    html_inside = html_inside.replace('<th', '<th style="font-size: 20px; font-weight: bold; padding: 12px; background-color: #FF9800; color: white;"')
+                    html_inside = html_inside.replace('<td', '<td style="font-size: 18px; padding: 10px; border-bottom: 1px solid #ddd;"')
+                    st.markdown(html_inside, unsafe_allow_html=True)
+                
+                if hammers:
+                    st.subheader(f"Hammer Setups ({len(hammers)})")
+                    hammer_data = []
+                    for setup in hammers:
+                        info = setup['setup_info']
+                        hammer_data.append({
+                            'Symbol': setup['symbol'],
+                            'Price': f"${info['price']:.2f}",
+                            'Recovery': f"+{info['recovery_pct']:.2f}%",
+                            'Broke Level': f"${info['broke_level']:.2f}",
+                            'Volume': f"{info['volume']:,}",
+                            'Date': info['date']
+                        })
+                    
+                    # Tabela HTML customizada
+                    hammer_df = pd.DataFrame(hammer_data)
+                    html_hammer = hammer_df.to_html(escape=False, index=False)
+                    html_hammer = html_hammer.replace('<table', '<table style="font-size: 18px; width: 100%;"')
+                    html_hammer = html_hammer.replace('<th', '<th style="font-size: 20px; font-weight: bold; padding: 12px; background-color: #4CAF50; color: white;"')
+                    html_hammer = html_hammer.replace('<td', '<td style="font-size: 18px; padding: 10px; border-bottom: 1px solid #ddd;"')
+                    st.markdown(html_hammer, unsafe_allow_html=True)
+                
+                if green_2d:
+                    st.subheader(f"2D Green Monthly ({len(green_2d)})")
+                    green_2d_data = []
+                    for setup in green_2d:
+                        info = setup['setup_info']
+                        green_2d_data.append({
+                            'Symbol': setup['symbol'],
+                            'Price': f"${info['price']:.2f}",
+                            'Monthly Change': f"+{info['monthly_change_pct']:.2f}%",
+                            'Previous Low': f"${info['previous_low']:.2f}",
+                            'Previous High': f"${info['previous_high']:.2f}",
+                            'Current Low': f"${info['current_low']:.2f}",
+                            'Current High': f"${info['current_high']:.2f}",
+                            'Break Amount': f"${info['break_amount']:.2f}",
+                            'Recovery': f"+{info['monthly_recovery_pct']:.2f}%",
+                            'Volume': f"{info['volume']:,}",
+                            'Date': info['date']
+                        })
+                    
+                    # Tabela HTML customizada
+                    green_2d_df = pd.DataFrame(green_2d_data)
+                    html_green = green_2d_df.to_html(escape=False, index=False)
+                    html_green = html_green.replace('<table', '<table style="font-size: 18px; width: 100%;"')
+                    html_green = html_green.replace('<th', '<th style="font-size: 20px; font-weight: bold; padding: 12px; background-color: #2196F3; color: white;"')
+                    html_green = html_green.replace('<td', '<td style="font-size: 18px; padding: 10px; border-bottom: 1px solid #ddd;"')
+                    st.markdown(html_green, unsafe_allow_html=True)
+                
+                # Botão de download dos resultados
+                if st.button("Download Resultados CSV"):
+                    csv = df_results.to_csv(index=False)
+                    st.download_button(
+                        label="Baixar CSV",
+                        data=csv,
+                        file_name=f"scanner_results_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
+                        mime="text/csv"
+                    )
+        else:
+            st.warning("Nenhum setup encontrado com os critérios selecionados. Tente:")
+            st.info("• Aumentar o número de símbolos analisados\n• Testar timeframes diferentes\n• Verificar se o mercado teve movimentos recentes")
 
 if __name__ == "__main__":
     main()
