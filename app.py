@@ -1,56 +1,4 @@
-# Processar símbolos
-        symbols_to_process = SYMBOLS[:max_symbols]
-        
-        for i, symbol in enumerate(symbols_to_process):
-            status_text.text(f"Analisando {symbol} ({i + 1}/{len(symbols_to_process)})...")
-            
-            try:
-                # Buscar dados
-                df = get_stock_data(symbol, period, interval)
-                
-                if df is not None and len(df) >= 10:
-                    setup_found = False
-                    setup_info = None
-                    
-                    # Detectar Inside Bar
-                    if detect_inside_bar_flag:
-                        is_inside, info = detect_inside_bar(df)
-                        if is_inside:
-                            found_setups.append({
-                                'symbol': symbol,
-                                'setup_info': info
-                            })
-                            setup_found = True
-                            setup_info = info
-                    
-                    # Detectar Hammer Setup
-                    if detect_hammer_flag and not setup_found:
-                        is_hammer, info = detect_hammer_setup(df)
-                        if is_hammer:
-                            found_setups.append({
-                                'symbol': symbol,
-                                'setup_info': info
-                            })
-                            setup_found = True
-                            setup_info = info
-                
-                processed_count += 1
-                
-            except Exception as e:
-                error_count += 1
-                st.sidebar.error(f"Erro em {symbol}: {str(e)}")
-            
-            # Atualizar métricas
-            progress = (i + 1) / len(symbols_to_process)
-            progress_bar.progress(progress)
-            
-            processed_metric.metric("Processados", str(processed_count))
-            found_metric.metric("Setups Encontrados", str(len(found_setups)))
-            errors_metric.metric("Erros", str(error_count))
-            progress_metric.metric("Progresso", f"{progress*100:.1f}%")
-            
-            # Pausa para evitar rate limiting
-            time.sleep(0.2)import streamlit as st
+import streamlit as st
 import yfinance as yf
 import pandas as pd
 import numpy as np
@@ -160,34 +108,16 @@ def detect_hammer_setup(df):
 
 @st.cache_data(ttl=3600)  # Cache por 1 hora
 def get_stock_data(symbol, period='1y', interval='1d'):
-    """Busca dados da ação usando yfinance com retry automático"""
-    max_retries = 3
-    retry_delay = 2  # segundos
-    
-    for attempt in range(max_retries):
-        try:
-            ticker = yf.Ticker(symbol)
-            data = ticker.history(period=period, interval=interval)
-            if data.empty:
-                return None
-            return data
-        except Exception as e:
-            error_msg = str(e).lower()
-            if "rate limit" in error_msg or "too many requests" in error_msg:
-                if attempt < max_retries - 1:
-                    time.sleep(retry_delay * (attempt + 1))  # Backoff exponencial
-                    continue
-                else:
-                    st.sidebar.warning(f"Rate limit para {symbol} - pulando...")
-                    return None
-            else:
-                st.sidebar.error(f"Erro em {symbol}: {str(e)}")
-                return None
-    return None
-
-def create_candlestick_chart(df, symbol, setup_info=None):
-    """Função removida - não usada mais"""
-    pass
+    """Busca dados da ação usando yfinance"""
+    try:
+        ticker = yf.Ticker(symbol)
+        data = ticker.history(period=period, interval=interval)
+        if data.empty:
+            return None
+        return data
+    except Exception as e:
+        st.sidebar.error(f"Erro em {symbol}: {str(e)}")
+        return None
 
 def main():
     st.markdown('<h1 class="main-header">Scanner de Setups Profissional</h1>', unsafe_allow_html=True)
