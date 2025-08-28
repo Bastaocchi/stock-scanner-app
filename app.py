@@ -40,7 +40,6 @@ st.markdown("""
         margin: 0.2rem;
         display: inline-block;
     }
-    /* Aumentar MUITO mais o tamanho da fonte das tabelas */
     .stDataFrame {
         font-size: 20px !important;
     }
@@ -55,7 +54,6 @@ st.markdown("""
         padding: 18px !important;
         line-height: 1.4 !important;
     }
-    /* Força o tamanho em todos os elementos da tabela */
     div[data-testid="stDataFrame"] table {
         font-size: 20px !important;
     }
@@ -64,7 +62,6 @@ st.markdown("""
         font-size: 20px !important;
         padding: 15px !important;
     }
-    /* Estilo para métricas */
     .metric-container {
         background: #f0f8ff;
         border: 2px solid #2196F3;
@@ -72,7 +69,6 @@ st.markdown("""
         padding: 10px;
         text-align: center;
     }
-    /* Aumentar fonte dos subtítulos das seções */
     .stMarkdown h3 {
         font-size: 1.8rem !important;
         font-weight: bold !important;
