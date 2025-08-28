@@ -41,45 +41,38 @@ button[kind="primary"], button[kind="secondary"] { font-size: 18px !important; f
 # ==============================
 @st.cache_data(ttl=3600)
 def load_symbols():
-    # ajuste para sua fonte (CSV/Sheets) quando quiser
+    # troque pela sua fonte (CSV/Sheets) quando quiser
     return [
         "AAPL","MSFT","TSLA","AMZN","NVDA","META","GOOGL","NFLX","AMD","IBM",
-        "JPM","BAC","XOM","CVX","KO","PEP","COST","AVGO","ORCL","INTC"
+        "JPM","BAC","XOM","CVX","KO","PEP","COST","AVGO","ORCL","INTC",
+        "ADBE","CRM","QCOM","TXN","CSCO","SHOP","PFE","MRK","WMT","HD"
     ]
 
 def _flatten_columns(df: pd.DataFrame) -> pd.DataFrame:
-    """Se vier MultiIndex (ex.: ('AAPL','High')), achata pegando o último nível."""
     if isinstance(df.columns, pd.MultiIndex):
         df.columns = [c[-1] if isinstance(c, tuple) else c for c in df.columns]
     return df
 
 def _standardize_ohlc(df: pd.DataFrame) -> pd.DataFrame:
-    """Renomeia colunas comuns para o formato Title e garante numéricos."""
-    # normaliza nomes
     rename_map = {c: c.title() for c in df.columns}
     df = df.rename(columns=rename_map)
-    # mantém apenas colunas esperadas se existirem
     expected = ["Open","High","Low","Close","Volume"]
     keep = [c for c in expected if c in df.columns]
     df = df[keep].copy()
-    # converte para numérico
     for c in keep:
         df[c] = pd.to_numeric(df[c], errors="coerce")
-    # remove linhas totalmente NaN
     df = df.dropna(how="all")
     return df
 
 @st.cache_data(ttl=1800)
 def get_stock_data(symbol, period="1y", interval="1d"):
-    """Download seguro de dados, flatten + padronização."""
     try:
         df = yf.download(symbol, period=period, interval=interval, progress=False)
         if df is None or df.empty:
             return None
         df = _flatten_columns(df)
         df = _standardize_ohlc(df)
-        # precisa pelo menos 2 velas para as comparações
-        if len(df) < 2 or not all(col in df.columns for col in ["Open","High","Low","Close"]):
+        if len(df) < 3 or not all(col in df.columns for col in ["Open","High","Low","Close"]):
             return None
         return df
     except Exception:
@@ -88,21 +81,28 @@ def get_stock_data(symbol, period="1y", interval="1d"):
 SYMBOLS = load_symbols()
 
 # ==============================
-# THESTRAT
+# HELPS
 # ==============================
 def _scalar(v):
-    """Garante escalar (evita 'Series is ambiguous')."""
-    if isinstance(v, (pd.Series, np.ndarray, list)):
+    if isinstance(v, (pd.Series, np.ndarray, list, tuple)):
         return float(v[-1])
     return float(v)
 
-def classify_strat_bar(curr: pd.Series, prev: pd.Series):
+# ==============================
+# THESTRAT CLASSIFICAÇÃO
+# ==============================
+def classify_strat_bar(curr: pd.Series, prev: pd.Series, inside_inclusive: bool = True):
     try:
         ch, cl, ph, pl = _scalar(curr["High"]), _scalar(curr["Low"]), _scalar(prev["High"]), _scalar(prev["Low"])
     except Exception:
         return None
-    if ch < ph and cl > pl:
-        return "1"
+    if inside_inclusive:
+        # Inside inclusivo (≤ / ≥) com pelo menos uma desigualdade estrita
+        if (ch <= ph) and (cl >= pl) and ((ch < ph) or (cl > pl)):
+            return "1"
+    else:
+        if ch < ph and cl > pl:
+            return "1"
     if ch > ph and cl < pl:
         return "3"
     if ch > ph:
@@ -111,14 +111,14 @@ def classify_strat_bar(curr: pd.Series, prev: pd.Series):
         return "2D"
     return None
 
-def detect_strat_combo(df: pd.DataFrame, lookback=3):
-    if len(df) < lookback + 1:
-        return None
-    bars = []
-    for i in range(-lookback, 0):
-        curr, prev = df.iloc[i], df.iloc[i-1]
-        bars.append(classify_strat_bar(curr, prev))
-    pattern = "-".join(bars)
+def detect_strat_combo_sliding(df: pd.DataFrame, window=3, search_span=6, inside_inclusive=True):
+    """
+    Varre janelas móveis (últimas 'search_span' barras) e tenta formar um padrão de 'window' barras.
+    Retorna o combo encontrado mais recente (ou None).
+    """
+    if len(df) < window + 1:
+        return None, None  # (nome, data)
+    start_idx = max(1, len(df) - search_span)  # garante que haja prev para a primeira janela
     combos = {
         "2U-1-2U": "Bullish 2-1-2 Continuation",
         "2D-1-2D": "Bearish 2-1-2 Continuation",
@@ -131,7 +131,91 @@ def detect_strat_combo(df: pd.DataFrame, lookback=3):
         "2U-2D": "2U-2D Reversal",
         "2D-2U": "2D-2U Reversal"
     }
-    return combos.get(pattern, None)
+    found_name, found_date = None, None
+    for i in range(start_idx, len(df) - (window - 1)):
+        seq = []
+        # gera tipos para barras i..i+window-1, comparando cada uma com a anterior
+        for j in range(i, i + window):
+            curr, prev = df.iloc[j], df.iloc[j-1]
+            seq.append(classify_strat_bar(curr, prev, inside_inclusive=inside_inclusive))
+        pattern = "-".join(seq)
+        if pattern in combos:
+            found_name = combos[pattern]
+            found_date = df.index[i + window - 1]
+    return found_name, found_date
+
+def scan_inside_bars(df: pd.DataFrame, lookback=6, inside_inclusive=True):
+    """
+    Procura Inside Bar nas últimas 'lookback' barras (comparando cada uma com a anterior).
+    Retorna (bool, data, preço_close)
+    """
+    if len(df) < 2:
+        return False, None, None
+    start = max(1, len(df) - lookback)
+    for i in range(len(df) - 1, start - 1, -1):  # do mais recente ao mais antigo dentro do lookback
+        curr, prev = df.iloc[i], df.iloc[i-1]
+        t = classify_strat_bar(curr, prev, inside_inclusive=inside_inclusive)
+        if t == "1":
+            try:
+                c_close = _scalar(curr["Close"])
+            except Exception:
+                c_close = None
+            return True, df.index[i], c_close
+    return False, None, None
+
+def scan_hammer(df: pd.DataFrame, lookback=6):
+    """
+    Hammer mais permissivo:
+      - corpo <= 50% do range
+      - sombra inferior >= 1.5x corpo
+      - sombra superior <= 1.2x corpo
+      - fechamento verde
+      - (opcional) rompeu a mínima anterior (mantido para robustez)
+    Retorna (bool, data, preço_close)
+    """
+    if len(df) < 3:
+        return False, None, None
+    start = max(1, len(df) - lookback)
+    for i in range(len(df) - 1, start - 1, -1):
+        curr, prev = df.iloc[i], df.iloc[i-1]
+        try:
+            o, h, l, c = _scalar(curr["Open"]), _scalar(curr["High"]), _scalar(curr["Low"]), _scalar(curr["Close"])
+            p_low = _scalar(prev["Low"])
+        except Exception:
+            continue
+        body = abs(c - o)
+        total = h - l
+        if total <= 0:
+            continue
+        lower_shadow = min(o, c) - l
+        upper_shadow = h - max(o, c)
+        is_small_body = body <= 0.5 * total
+        long_lower = lower_shadow >= 1.5 * body
+        short_upper = upper_shadow <= 1.2 * body
+        green = c > o
+        broke_prev_low = l < p_low  # mantém para priorizar hammers "úteis"
+        if is_small_body and long_lower and short_upper and green and broke_prev_low:
+            return True, df.index[i], c
+    return False, None, None
+
+def scan_2d_green_monthly(df: pd.DataFrame, lookback=6):
+    """
+    2D Green Monthly nas últimas 'lookback' barras mensais.
+    Retorna (bool, data, preço_close)
+    """
+    if len(df) < 2:
+        return False, None, None
+    start = max(1, len(df) - lookback)
+    for i in range(len(df) - 1, start - 1, -1):
+        curr, prev = df.iloc[i], df.iloc[i-1]
+        try:
+            ch, cl, co, cc = _scalar(curr["High"]), _scalar(curr["Low"]), _scalar(curr["Open"]), _scalar(curr["Close"])
+            ph, pl = _scalar(prev["High"]), _scalar(prev["Low"])
+        except Exception:
+            continue
+        if (cl < pl) and (cc > co) and (ch <= ph):
+            return True, df.index[i], cc
+    return False, None, None
 
 def check_ftfc(symbol: str):
     """Full Timeframe Continuity: 1D, 1W, 1M alinhados por cor (Close > Open)."""
@@ -197,7 +281,7 @@ def render_colored_table(df: pd.DataFrame):
 # ==============================
 def main():
     # Filtros horizontais
-    c1, c2, c3, c4 = st.columns([2,3,2,2])
+    c1, c2, c3, c4 = st.columns([2,4,2,2])
 
     with c1:
         timeframes = {"1D": ("1y", "1d"), "1W": ("2y", "1wk"), "1M": ("5y", "1mo")}
@@ -205,13 +289,13 @@ def main():
 
     with c2:
         inside = st.checkbox("Inside Bar", value=True)
-        hammer = st.checkbox("Hammer Setup", value=False)
+        hammer = st.checkbox("Hammer Setup", value=True)
         green2d = st.checkbox("2D Green Monthly", value=False)
         combos = st.checkbox("TheStrat Combos", value=True)
-        ftfc = st.checkbox("Full Timeframe Continuity", value=False)
+        ftfc = st.checkbox("Full Timeframe Continuity", value=True)
 
     with c3:
-        max_symbols = st.slider("Máx. símbolos", 5, len(SYMBOLS), min(50, len(SYMBOLS)))
+        max_symbols = st.slider("Máx. símbolos", 10, len(SYMBOLS), min(60, len(SYMBOLS)))
 
     with c4:
         run = st.button("Iniciar Scanner", use_container_width=True)
@@ -220,6 +304,12 @@ def main():
 
     if run:
         period, interval = timeframes[timeframe]
+        # parâmetros de busca mais amplos para aumentar detecções
+        inside_lookback = 8
+        hammer_lookback = 8
+        combo_window = 3
+        combo_search_span = 6
+        inside_inclusive = True
 
         m1, m2, m3 = st.columns(3)
         processed_metric = m1.metric("Processados", "0")
@@ -238,70 +328,60 @@ def main():
             df = get_stock_data(symbol, period=period, interval=interval)
 
             if df is not None and len(df) > 5:
-                curr, prev = df.iloc[-1], df.iloc[-2]
-
-                # Extrai escalares seguros
-                try:
-                    c_high, c_low = _scalar(curr["High"]), _scalar(curr["Low"])
-                    p_high, p_low = _scalar(prev["High"]), _scalar(prev["Low"])
-                    c_open, c_close = _scalar(curr["Open"]), _scalar(curr["Close"])
-                    p_low_scalar = p_low
-                except Exception:
-                    c_high = c_low = p_high = p_low = c_open = c_close = None
-
-                # Inside Bar
-                if inside and None not in (c_high, c_low, p_high, p_low):
-                    if (c_high < p_high) and (c_low > p_low):
+                # Inside Bar (janela)
+                if inside:
+                    ok, dt, px = scan_inside_bars(df, lookback=inside_lookback, inside_inclusive=inside_inclusive)
+                    if ok:
                         results.append({
                             "Symbol": symbol,
                             "Setup": "Inside Bar",
-                            "Price": f"${c_close:.2f}",
-                            "Date": df.index[-1].strftime("%Y-%m-%d")
+                            "Price": f"${px:.2f}" if px is not None else "",
+                            "Date": dt.strftime("%Y-%m-%d")
                         })
 
-                # Hammer
-                if hammer and None not in (c_high, c_low, c_open, c_close, p_low_scalar):
-                    body = abs(c_close - c_open)
-                    total_range = c_high - c_low
-                    lower_shadow = min(c_open, c_close) - c_low
-                    if total_range > 0 and body <= 0.4*total_range and lower_shadow >= 2*body \
-                       and (c_close > c_open) and (c_low < p_low_scalar):
+                # Hammer (janela)
+                if hammer:
+                    ok, dt, px = scan_hammer(df, lookback=hammer_lookback)
+                    if ok:
                         results.append({
                             "Symbol": symbol,
                             "Setup": "Hammer Setup",
-                            "Price": f"${c_close:.2f}",
-                            "Date": df.index[-1].strftime("%Y-%m-%d")
+                            "Price": f"${px:.2f}" if px is not None else "",
+                            "Date": dt.strftime("%Y-%m-%d")
                         })
 
-                # 2D Green Monthly (somente no timeframe mensal)
-                if green2d and interval == "1mo" and None not in (c_high, c_low, c_open, c_close, p_high, p_low):
-                    if (c_low < p_low) and (c_close > c_open) and (c_high <= p_high):
+                # 2D Green Monthly (janela)
+                if green2d and interval == "1mo":
+                    ok, dt, px = scan_2d_green_monthly(df, lookback=6)
+                    if ok:
                         results.append({
                             "Symbol": symbol,
                             "Setup": "2D Green Monthly",
-                            "Price": f"${c_close:.2f}",
-                            "Date": df.index[-1].strftime("%Y-%m-%d")
+                            "Price": f"${px:.2f}" if px is not None else "",
+                            "Date": dt.strftime("%Y-%m-%d")
                         })
 
-                # Combos TheStrat
+                # Combos TheStrat (janelas móveis)
                 if combos:
-                    combo_name = detect_strat_combo(df, lookback=3)
-                    if combo_name:
+                    combo_name, dt = detect_strat_combo_sliding(df, window=combo_window, search_span=combo_search_span, inside_inclusive=inside_inclusive)
+                    if combo_name and dt is not None:
+                        px = float(df.loc[dt, "Close"])
                         results.append({
                             "Symbol": symbol,
                             "Setup": combo_name,
-                            "Price": f"${c_close:.2f}" if c_close is not None else "",
-                            "Date": df.index[-1].strftime("%Y-%m-%d")
+                            "Price": f"${px:.2f}",
+                            "Date": dt.strftime("%Y-%m-%d")
                         })
 
                 # FTFC
                 if ftfc:
                     direction = check_ftfc(symbol)
                     if direction:
+                        last_close = float(df.iloc[-1]["Close"])
                         results.append({
                             "Symbol": symbol,
                             "Setup": f"FTFC {direction}",
-                            "Price": f"${c_close:.2f}" if c_close is not None else "",
+                            "Price": f"${last_close:.2f}",
                             "Date": df.index[-1].strftime("%Y-%m-%d")
                         })
 
@@ -321,8 +401,6 @@ def main():
             # Bias + badge
             df_results["Bias"] = df_results["Setup"].apply(setup_bias)
             df_results["Bias Badge"] = df_results["Bias"].apply(badge_for_bias)
-
-            # Reordena colunas
             cols = ["Symbol", "Setup", "Bias", "Bias Badge", "Price", "Date"]
             df_results = df_results[cols]
 
@@ -339,7 +417,7 @@ def main():
                 mime="text/csv"
             )
         else:
-            st.warning("Nenhum setup encontrado.")
+            st.warning("Nenhum setup encontrado com as condições atuais. O scanner agora varre múltiplas velas e usa Inside inclusivo; se ainda zerar, aumente o 'Máx. símbolos' ou troque o timeframe.")
 
 if __name__ == "__main__":
     main()
