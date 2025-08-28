@@ -79,14 +79,11 @@ def classify_strat_bar(curr, prev):
 def detect_strat_combo(df, lookback=3):
     if len(df) < lookback + 1:
         return None
-    
     bars = []
     for i in range(-lookback, 0):
         curr, prev = df.iloc[i], df.iloc[i-1]
         bars.append(classify_strat_bar(curr, prev))
-    
     pattern = "-".join(bars)
-
     combos = {
         "2U-1-2U": "Bullish 2-1-2 Continuation",
         "2D-1-2D": "Bearish 2-1-2 Continuation",
@@ -100,6 +97,27 @@ def detect_strat_combo(df, lookback=3):
         "2D-2U": "2D-2U Reversal"
     }
     return combos.get(pattern, None)
+
+def check_ftfc(symbol):
+    """Checa Full Timeframe Continuity (D/W/M)"""
+    try:
+        tf_map = {
+            "1D": ("5d", "1d"),
+            "1W": ("1y", "1wk"),
+            "1M": ("5y", "1mo")
+        }
+        directions = {}
+        for tf, (period, interval) in tf_map.items():
+            df = yf.download(symbol, period=period, interval=interval, progress=False)
+            if df.empty:
+                return None
+            last = df.iloc[-1]
+            directions[tf] = "UP" if last["Close"] > last["Open"] else "DOWN"
+        if len(set(directions.values())) == 1:
+            return directions["1D"]  # "UP" ou "DOWN"
+        return None
+    except:
+        return None
 
 # ==============================
 # APP PRINCIPAL
@@ -121,7 +139,8 @@ def main():
             "Inside Bar": st.checkbox("Inside Bar", value=True),
             "Hammer": st.checkbox("Hammer Setup", value=False),
             "2D Green": st.checkbox("2D Green Monthly", value=False),
-            "Combos": st.checkbox("TheStrat Combos", value=True)
+            "Combos": st.checkbox("TheStrat Combos", value=True),
+            "FTFC": st.checkbox("Full Timeframe Continuity", value=False)
         }
 
     with col3:
@@ -170,7 +189,13 @@ def main():
                 if setups["Combos"]:
                     combo = detect_strat_combo(df, lookback=3)
                     if combo:
-                        results.append({"Symbol": symbol,"Setup": combo,"Price": f"${curr['Close']:.2f}","Date": df.index[-1].strftime("%Y-%m-%d")})
+                        results.append({"Symbol": symbol,"Setup": combo,"Price": f"${df.iloc[-1]['Close']:.2f}","Date": df.index[-1].strftime("%Y-%m-%d")})
+
+                # FTFC
+                if setups["FTFC"]:
+                    direction = check_ftfc(symbol)
+                    if direction:
+                        results.append({"Symbol": symbol,"Setup": f"FTFC {direction}","Price": f"${curr['Close']:.2f}","Date": df.index[-1].strftime("%Y-%m-%d")})
 
             # Atualiza métricas
             progress = (i+1)/len(SYMBOLS)
