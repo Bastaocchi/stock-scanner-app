@@ -469,9 +469,16 @@ def main():
                             'Date': info['date']
                         })
                 
-                # Exibir tabela
-                df_results = pd.DataFrame(results_data)
-                st.dataframe(df_results, use_container_width=True)
+                # Exibir tabela com estilo customizado
+                st.markdown("### 📊 Tabela de Resultados")
+                
+                # Usar st.markdown com HTML para controlar fonte
+                html_table = df_results.to_html(escape=False, index=False)
+                html_table = html_table.replace('<table', '<table style="font-size: 18px; width: 100%;"')
+                html_table = html_table.replace('<th', '<th style="font-size: 20px; font-weight: bold; padding: 12px; background-color: #2196F3; color: white;"')
+                html_table = html_table.replace('<td', '<td style="font-size: 18px; padding: 10px; border-bottom: 1px solid #ddd;"')
+                
+                st.markdown(html_table, unsafe_allow_html=True)
                 
                 # Separar por tipo
                 inside_bars = [s for s in found_setups if s['setup_info']['type'] == 'Inside Bar']
@@ -490,7 +497,14 @@ def main():
                             'Volume': f"{info['volume']:,}",
                             'Date': info['date']
                         })
-                    st.dataframe(pd.DataFrame(inside_data), use_container_width=True)
+                    
+                    # Tabela HTML customizada
+                    inside_df = pd.DataFrame(inside_data)
+                    html_inside = inside_df.to_html(escape=False, index=False)
+                    html_inside = html_inside.replace('<table', '<table style="font-size: 18px; width: 100%;"')
+                    html_inside = html_inside.replace('<th', '<th style="font-size: 20px; font-weight: bold; padding: 12px; background-color: #FF9800; color: white;"')
+                    html_inside = html_inside.replace('<td', '<td style="font-size: 18px; padding: 10px; border-bottom: 1px solid #ddd;"')
+                    st.markdown(html_inside, unsafe_allow_html=True)
                 
                 if hammers:
                     st.subheader(f"Hammer Setups ({len(hammers)})")
@@ -505,7 +519,14 @@ def main():
                             'Volume': f"{info['volume']:,}",
                             'Date': info['date']
                         })
-                    st.dataframe(pd.DataFrame(hammer_data), use_container_width=True)
+                    
+                    # Tabela HTML customizada
+                    hammer_df = pd.DataFrame(hammer_data)
+                    html_hammer = hammer_df.to_html(escape=False, index=False)
+                    html_hammer = html_hammer.replace('<table', '<table style="font-size: 18px; width: 100%;"')
+                    html_hammer = html_hammer.replace('<th', '<th style="font-size: 20px; font-weight: bold; padding: 12px; background-color: #4CAF50; color: white;"')
+                    html_hammer = html_hammer.replace('<td', '<td style="font-size: 18px; padding: 10px; border-bottom: 1px solid #ddd;"')
+                    st.markdown(html_hammer, unsafe_allow_html=True)
                 
                 if green_2d:
                     st.subheader(f"2D Green Monthly ({len(green_2d)})")
@@ -525,7 +546,14 @@ def main():
                             'Volume': f"{info['volume']:,}",
                             'Date': info['date']
                         })
-                    st.dataframe(pd.DataFrame(green_2d_data), use_container_width=True)
+                    
+                    # Tabela HTML customizada
+                    green_2d_df = pd.DataFrame(green_2d_data)
+                    html_green = green_2d_df.to_html(escape=False, index=False)
+                    html_green = html_green.replace('<table', '<table style="font-size: 18px; width: 100%;"')
+                    html_green = html_green.replace('<th', '<th style="font-size: 20px; font-weight: bold; padding: 12px; background-color: #2196F3; color: white;"')
+                    html_green = html_green.replace('<td', '<td style="font-size: 18px; padding: 10px; border-bottom: 1px solid #ddd;"')
+                    st.markdown(html_green, unsafe_allow_html=True)
                 
                 # Botão de download dos resultados
                 if st.button("Download Resultados CSV"):
