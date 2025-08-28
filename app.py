@@ -159,6 +159,43 @@ def detect_inside_bar(df):
     
     return False, None
 
+def detect_hammer_setup(df):
+    """Detecta Hammer Setup: martelo que rompeu mínima anterior e fechou verde"""
+    if len(df) < 3:
+        return False, None
+    
+    current = df.iloc[-1]
+    previous = df.iloc[-2]
+    
+    # Condições do hammer
+    body_size = abs(current['Close'] - current['Open'])
+    total_range = current['High'] - current['Low']
+    lower_shadow = min(current['Open'], current['Close']) - current['Low']
+    upper_shadow = current['High'] - max(current['Open'], current['Close'])
+    
+    # Critérios para hammer
+    is_small_body = body_size <= 0.4 * total_range
+    is_long_lower_shadow = lower_shadow >= 2 * body_size
+    is_short_upper_shadow = upper_shadow <= body_size
+    broke_below = current['Low'] < previous['Low']
+    closed_green = current['Close'] > current['Open']
+    
+    is_hammer = is_small_body and is_long_lower_shadow and is_short_upper_shadow
+    is_hammer_setup = is_hammer and broke_below and closed_green
+    
+    if is_hammer_setup:
+        recovery_pct = ((current['Close'] - current['Low']) / current['Low']) * 100
+        return True, {
+            'type': 'Hammer Setup',
+            'price': current['Close'],
+            'recovery_pct': recovery_pct,
+            'broke_level': previous['Low'],
+            'volume': current['Volume'],
+            'date': current.name.strftime('%Y-%m-%d')
+        }
+    
+    return False, None
+
 def detect_2d_green_monthly(df):
     """Detecta 2D Green Monthly: rompeu mínima da vela mensal anterior, mas hoje está verde, SEM superar a máxima anterior"""
     if len(df) < 2:
