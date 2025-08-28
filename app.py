@@ -1,4 +1,68 @@
-import streamlit as st
+# Processar símbolos com controle de rate limiting
+        symbols_to_process = SYMBOLS[:max_symbols]
+        batch_size = 10  # Processar em lotes menores
+        batch_delay = 3  # Pausa entre lotes em segundos
+        
+        for batch_start in range(0, len(symbols_to_process), batch_size):
+            batch_end = min(batch_start + batch_size, len(symbols_to_process))
+            current_batch = symbols_to_process[batch_start:batch_end]
+            
+            # Processar lote atual
+            for i, symbol in enumerate(current_batch):
+                overall_index = batch_start + i
+                status_text.text(f"Analisando {symbol} ({overall_index + 1}/{len(symbols_to_process)})...")
+                
+                try:
+                    # Buscar dados
+                    df = get_stock_data(symbol, period, interval)
+                    
+                    if df is not None and len(df) >= 10:
+                        setup_found = False
+                        setup_info = None
+                        
+                        # Detectar Inside Bar
+                        if detect_inside_bar_flag:
+                            is_inside, info = detect_inside_bar(df)
+                            if is_inside:
+                                found_setups.append({
+                                    'symbol': symbol,
+                                    'setup_info': info
+                                })
+                                setup_found = True
+                                setup_info = info
+                        
+                        # Detectar Hammer Setup
+                        if detect_hammer_flag and not setup_found:
+                            is_hammer, info = detect_hammer_setup(df)
+                            if is_hammer:
+                                found_setups.append({
+                                    'symbol': symbol,
+                                    'setup_info': info
+                                })
+                                setup_found = True
+                                setup_info = info
+                    
+                    processed_count += 1
+                    
+                except Exception as e:
+                    error_count += 1
+                    st.sidebar.error(f"Erro em {symbol}: {str(e)}")
+                
+                # Atualizar métricas
+                progress = (overall_index + 1) / len(symbols_to_process)
+                progress_bar.progress(progress)
+                
+                processed_metric.metric("Processados", str(processed_count))
+                found_metric.metric("Setups Encontrados", str(len(found_setups)))
+                errors_metric.metric("Erros", str(error_count))
+                progress_metric.metric("Progresso", f"{progress*100:.1f}%")
+                
+                # Pausa entre símbolos para evitar rate limiting
+                time.sleep(0.2)
+            
+            # Pausa maior entre lotes
+            if batch_end < len(symbols_to_process):
+                status_text.text(f"Pausa de {batch_delay}import streamlit as st
 import yfinance as yf
 import pandas as pd
 import numpy as np
@@ -43,8 +107,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Lista de símbolos (seus 664 tickers)
-SYMBOLS = ["A","AAL","AAPL","ABBV","ABNB","ABT","ACGL","ACN","ADBE","ADI","ADP","ADSK","AEE","AEP","AES","AFL","AIG","AIZ","AJG","AKAM","ALB","ALGN","ALL","ALLE","AMAT","AMCR","AMD","AME","AMGN","AMP","AMT","AMZN","ANET","ANSS","AON","AOS","APA","APD","APH","APTV","ARE","ATO","AVB","AVGO","AVY","AWK","AXON","AXP","AZO","BA","BAC","BALL","BAX","BBWI","BBY","BDX","BEN","BF.B","BIIB","BIO","BK","BKNG","BKR","BLDR","BLK","BMY","BR","BRK.B","BRO","BSX","BWA","BX","BXP","C","CAG","CAH","CARR","CAT","CB","CBOE","CBRE","CCI","CCL","CDAY","CDNS","CDW","CE","CEG","CF","CFG","CHD","CHRW","CHTR","CI","CINF","CL","CLX","CMA","CMCSA","CME","CMG","CMI","CMS","CNC","CNP","COF","COO","COP","COR","COST","COTY","CPB","CPRT","CPT","CRL","CRM","CSCO","CSGP","CSX","CTAS","CTLT","CTRA","CTSH","CTVA","CVS","CVX","CZR","D","DAL","DD","DE","DFS","DG","DGX","DHI","DHR","DIS","DJT","DLTR","DOV","DOW","DPZ","DRI","DTE","DUK","DVA","DVN","DXCM","EA","EBAY","ECL","ED","EFX","EIX","EL","ELV","EMN","EMR","ENPH","EOG","EPAM","EQIX","EQR","EQT","ES","ESS","ETN","ETR","EVRG","EW","EXC","EXPD","EXPE","EXR","F","FANG","FAST","FCX","FDS","FDX","FE","FFIV","FI","FICO","FIS","FITB","FMC","FRT","FSLR","FTNT","FTV","GD","GE","GILD","GIS","GL","GLW","GM","GNRC","GOOG","GOOGL","GPC","GPN","GRMN","GS","GWW","HAL","HAS","HBAN","HCA","HD","HES","HIG","HII","HLT","HOLX","HON","HPE","HPQ","HRL","HSIC","HST","HSY","HUBB","HUM","HWM","IBM","ICE","IDXX","IEX","IFF","INCY","INTC","INTU","INVH","IP","IPG","IQV","IR","IRM","ISRG","IT","ITW","IVZ","J","JBHT","JBL","JCI","JKHY","JNJ","JNPR","JPM","K","KDP","KEY","KEYS","KHC","KIM","KLAC","KMB","KMI","KMX","KO","KR","KVUE","L","LAMR","LDOS","LEN","LH","LHX","LIN","LKQ","LLY","LMT","LNT","LOW","LRCX","LULU","LUV","LVS","LW","LYB","LYV","MA","MAA","MAR","MAS","MCD","MCHP","MCK","MCO","MDLZ","MDT","MET","META","MGM","MHK","MKC","MKTX","MLM","MMC","MMM","MNST","MO","MOH","MOS","MPC","MPWR","MRK","MRNA","MRO","MS","MSCI","MSFT","MSI","MTB","MTCH","MTD","MU","NCLH","NDAQ","NDSN","NEE","NEM","NFLX","NI","NKE","NOC","NOW","NRG","NSC","NTAP","NTRS","NUE","NVDA","NVR","NWS","NWSA","NXPI","O","ODFL","OKE","OMC","ON","ORCL","ORLY","OTIS","OXY","PANW","PARA","PAYC","PAYX","PCAR","PCG","PEAK","PEG","PEP","PFE","PFG","PG","PGR","PH","PHM","PKG","PKI","PLD","PM","PNC","PNR","PNW","PODD","POOL","PPG","PPL","PRU","PSA","PSX","PTC","PWR","PXD","PYPL","QCOM","QRVO","RCL","REG","REGN","RF","RHI","RJF","RL","RMD","ROK","ROL","ROP","ROST","RSG","RTX","RVTY","SBAC","SBUX","SCHW","SHW","SJM","SLB","SMCI","SNA","SNPS","SO","SOLV","SPG","SPGI","SRE","STE","STLD","STT","STX","STZ","SWK","SWKS","SYF","SYK","SYY","T","TAP","TDG","TDY","TECH","TEL","TER","TFC","TFX","TGT","TJX","TMO","TMUS","TPG","TPR","TRGP","TRMB","TROW","TRV","TSCO","TSLA","TSN","TT","TTWO","TXN","TXT","TYL","UAL","UBER","UDR","UHS","ULTA","UNH","UNP","UPS","URI","USB","V","VICI","VLO","VMEO","VMC","VRSK","VRSN","VTRS","VTR","VRTX","VZ","WAB","WAT","WBA","WBD","WDC","WEC","WELL","WFC","WM","WMB","WMT","WRB","WST","WTW","WY","WYNN","XEL","XOM","XYL","YUM","ZBH","ZION","ZTS"]
+# Lista de símbolos do seu arquivo CSV (seus 664 tickers exatos)
+SYMBOLS = ["A","AAL","AAPL","ABBV","ABNB","ABT","ACGL","ACN","ADBE","ADI","ADM","ADP","ADSK","AEE","AEP","AES","AFL","AFRM","AIG","AIZ","AJG","AKAM","ALB","ALGN","ALK","ALL","ALLE","AM","AMAT","AMCR","AMD","AME","AMGN","AMP","AMT","AMZN","ANET","AON","AOS","APA","APD","APH","APO","ARCC","ARE","ARTNA","ASML","ATO","AVB","AVGO","AVY","AWK","AXON","AXP","AZN","AZO","BA","BABA","BAC","BALL","BAX","BBDC","BBY","BDX","BE","BEN","BG","BIDU","BIIB","BILL","BIZD","BK","BKNG","BKR","BLDP","BLK","BMO","BMY","BNS","BP","BR","BRO","BSX","BX","BXP","BXSL","BYND","C","CAG","CAH","CAPL","CARR","CAT","CB","CBOE","CBRE","CCI","CCL","CCO","CDNS","CDW","CDZI","CEG","CF","CFG","CGBD","CHD","CHKP","CHRW","CHTR","CI","CINF","CL","CLX","CM","CMCSA","CME","CMG","CMI","CMS","CNC","CNI","CNP","CNQ","COF","COIN","COO","COP","COR","COST","CP","CPAY","CPB","CPRT","CPT","CRL","CRM","CRWD","CSCO","CSGP","CSIQ","CSX","CTAS","CTRA","CTSH","CTVA","CVLT","CVS","CVX","CWT","CYBR","CZR","D","DAL","DASH","DAY","DD","DDOG","DE","DECK","DELL","DG","DGX","DHI","DHR","DIS","DLR","DLTR","DMLP","DOC","DOCN","DOCU","DOL","DOV","DOW","DPZ","DQ","DRI","DTE","DUK","DVA","DVN","DXCM","EA","EBAY","ECL","ED","EFX","EG","EIX","EL","ELV","EME","EMN","EMR","ENB","ENPH","EOG","EPAM","EPD","EQIX","EQR","EQT","ERIE","ES","ESS","ESTC","ET","ETN","ETR","EVRG","EW","EXC","EXE","EXPD","EXPE","EXR","F","FANG","FAST","FCEL","FCX","FDS","FDX","FE","FFIV","FI","FICO","FIS","FITB","FLEX","FNF","FNV","FOUR","FOX","FOXA","FROG","FRT","FSK","FSLR","FTNT","FTV","GAIN","GBDC","GD","GDDY","GDOT","GE","GEHC","GEL","GEN","GEV","GILD","GIS","GL","GLW","GM","GNRC","GOOG","GOOGL","GPC","GPN","GRMN","GS","GSBD","GSK","GWRE","GWRS","GWW","HAL","HAS","HBAN","HCA","HD","HESM","HIG","HII","HLT","HOLX","HON","HOOD","HPE","HPQ","HRL","HSIC","HST","HSY","HTGC","HUBB","HUM","HWM","HYLN","IBKR","IBM","ICE","IDXX","IESC","IEX","IFF","INCY","INTC","INTU","INVH","IP","IPG","IQV","IR","IRM","ISRG","IT","ITW","IVZ","J","JBHT","JBL","JBLU","JCI","JD","JKHY","JKS","JNJ","JPM","K","KDP","KEY","KEYS","KHC","KIM","KKR","KLAC","KMB","KMI","KMX","KNTK","KO","KR","KVUE","L","LCID","LDOS","LEN","LH","LHX","LI","LII","LIN","LKQ","LLY","LMT","LNT","LOW","LRCX","LULU","LUV","LVS","LW","LYB","LYV","MA","MAA","MAIN","MAR","MAXN","MCD","MCHP","MCK","MCO","MDB","MDLZ","MDT","MDU","MET","META","MFC","MGM","MHK","MKC","MKTX","MLM","MMC","MMM","MNST","MO","MOH","MOS","MPC","MPLX","MPWR","MRK","MRNA","MRVL","MS","MSBI","MSCI","MSEX","MSFT","MSI","MTB","MTCH","MTD","MTZ","MU","NCLH","NDAQ","NDSN","NEE","NEM","NET","NEWT","NFG","NFLX","NI","NIO","NJR","NKE","NOC","NOW","NRG","NSC","NSIT","NTAP","NTES","NTRS","NU","NUE","NVDA","NVO","NVR","NWS","NWSA","NXPI","O","OCCI","ODFL","OGS","OKE","OKTA","OMC","ON","OPEN","ORCL","ORLY","OTEX","OTIS","OXY","PAA","PANW","PAYC","PAYX","PBT","PCAR","PCG","PDD","PEG","PEP","PFE","PFG","PG","PGR","PH","PHM","PINS","PKG","PLBY","PLD","PLTR","PLUG","PM","PNC","PNR","PNW","PODD","POOL","PPG","PPL","PRIM","PRLB","PRU","PSA","PSEC","PSTG","PSX","PTC","PURE","PWR","PYPL","QCOM","QLYS","QRVO","QSR","RBA","RBLX","RCL","REAL","REG","REGN","RF","RIVN","RJF","RL","RMD","ROAD","ROK","ROKU","ROL","ROP","ROST","RPD","RSG","RTX","RUN","RVTY","RXO","RY","S","SAIA","SAIL","SAP","SBAC","SBUX","SCHW","SEDG","SHEL","SHOP","SHW","SJM","SJT","SKYW","SLB","SLF","SMCI","SNA","SNAP","SNOW","SNPS","SNY","SO","SOFI","SOL","SOLV","SPG","SPGI","SPWR","SRE","STC","STE","STLD","STRL","STT","STX","STZ","SU","SW","SWK","SWKS","SWX","SYF","SYK","SYY","T","TAP","TCEHY","TD","TDG","TDY","TEAM","TECH","TEL","TENB","TER","TFC","TFI","TGT","TJX","TKO","TM","TMO","TMUS","TPL","TPR","TRGP","TRI","TRMB","TROW","TRV","TSCO","TSLA","TSLX","TSM","TSN","TT","TTD","TTE","TTWO","TWLO","TXN","TXT","TYL","U","UAL","UBER","UDR","UGI","UHS","UL","ULTA","UNH","UNP","UPS","UPST","URI","USAC","USB","USFD","V","VEEV","VICI","VLO","VLTO","VMC","VOC","VRNS","VRSK","VRSN","VRTX","VST","VTR","VTRS","VZ","WAB","WAT","WBA","WBD","WCN","WDAY","WDC","WEC","WELL","WES","WFC","WM","WMB","WMT","WPM","WRB","WSM","WSO","WST","WTW","WY","WYNN","XEL","XOM","XPEV","XYL","XYZ","YORW","YUM","ZBH","ZBRA","ZM","ZS","ZTS"]
 
 def detect_inside_bar(df):
     """Detecta Inside Bar: máxima atual < máxima anterior E mínima atual > mínima anterior"""
@@ -108,16 +172,30 @@ def detect_hammer_setup(df):
 
 @st.cache_data(ttl=3600)  # Cache por 1 hora
 def get_stock_data(symbol, period='1y', interval='1d'):
-    """Busca dados da ação usando yfinance"""
-    try:
-        ticker = yf.Ticker(symbol)
-        data = ticker.history(period=period, interval=interval)
-        if data.empty:
-            return None
-        return data
-    except Exception as e:
-        st.error(f"Erro ao buscar dados para {symbol}: {str(e)}")
-        return None
+    """Busca dados da ação usando yfinance com retry automático"""
+    max_retries = 3
+    retry_delay = 2  # segundos
+    
+    for attempt in range(max_retries):
+        try:
+            ticker = yf.Ticker(symbol)
+            data = ticker.history(period=period, interval=interval)
+            if data.empty:
+                return None
+            return data
+        except Exception as e:
+            error_msg = str(e).lower()
+            if "rate limit" in error_msg or "too many requests" in error_msg:
+                if attempt < max_retries - 1:
+                    time.sleep(retry_delay * (attempt + 1))  # Backoff exponencial
+                    continue
+                else:
+                    st.sidebar.warning(f"Rate limit para {symbol} - pulando...")
+                    return None
+            else:
+                st.sidebar.error(f"Erro em {symbol}: {str(e)}")
+                return None
+    return None
 
 def create_candlestick_chart(df, symbol, setup_info=None):
     """Função removida - não usada mais"""
