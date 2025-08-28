@@ -40,38 +40,26 @@ st.markdown("""
         margin: 0.2rem;
         display: inline-block;
     }
+    /* Aumentar tamanho da fonte das tabelas */
     .stDataFrame {
-        font-size: 20px !important;
+        font-size: 16px !important;
     }
     .stDataFrame td {
-        font-size: 20px !important;
-        padding: 15px !important;
-        line-height: 1.4 !important;
+        font-size: 16px !important;
+        padding: 12px !important;
     }
     .stDataFrame th {
-        font-size: 22px !important;
+        font-size: 18px !important;
         font-weight: bold !important;
-        padding: 18px !important;
-        line-height: 1.4 !important;
-    }
-    div[data-testid="stDataFrame"] table {
-        font-size: 20px !important;
-    }
-    div[data-testid="stDataFrame"] table td,
-    div[data-testid="stDataFrame"] table th {
-        font-size: 20px !important;
         padding: 15px !important;
     }
+    /* Estilo para métricas */
     .metric-container {
         background: #f0f8ff;
         border: 2px solid #2196F3;
         border-radius: 10px;
         padding: 10px;
         text-align: center;
-    }
-    .stMarkdown h3 {
-        font-size: 1.8rem !important;
-        font-weight: bold !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -153,43 +141,6 @@ def detect_inside_bar(df):
             'type': 'Inside Bar',
             'price': current['Close'],
             'change_pct': change_pct,
-            'volume': current['Volume'],
-            'date': current.name.strftime('%Y-%m-%d')
-        }
-    
-    return False, None
-
-def detect_hammer_setup(df):
-    """Detecta Hammer Setup: martelo que rompeu mínima anterior e fechou verde"""
-    if len(df) < 3:
-        return False, None
-    
-    current = df.iloc[-1]
-    previous = df.iloc[-2]
-    
-    # Condições do hammer
-    body_size = abs(current['Close'] - current['Open'])
-    total_range = current['High'] - current['Low']
-    lower_shadow = min(current['Open'], current['Close']) - current['Low']
-    upper_shadow = current['High'] - max(current['Open'], current['Close'])
-    
-    # Critérios para hammer
-    is_small_body = body_size <= 0.4 * total_range
-    is_long_lower_shadow = lower_shadow >= 2 * body_size
-    is_short_upper_shadow = upper_shadow <= body_size
-    broke_below = current['Low'] < previous['Low']
-    closed_green = current['Close'] > current['Open']
-    
-    is_hammer = is_small_body and is_long_lower_shadow and is_short_upper_shadow
-    is_hammer_setup = is_hammer and broke_below and closed_green
-    
-    if is_hammer_setup:
-        recovery_pct = ((current['Close'] - current['Low']) / current['Low']) * 100
-        return True, {
-            'type': 'Hammer Setup',
-            'price': current['Close'],
-            'recovery_pct': recovery_pct,
-            'broke_level': previous['Low'],
             'volume': current['Volume'],
             'date': current.name.strftime('%Y-%m-%d')
         }
@@ -469,16 +420,9 @@ def main():
                             'Date': info['date']
                         })
                 
-                # Exibir tabela com estilo customizado
-                st.markdown("### 📊 Tabela de Resultados")
-                
-                # Usar st.markdown com HTML para controlar fonte
-                html_table = df_results.to_html(escape=False, index=False)
-                html_table = html_table.replace('<table', '<table style="font-size: 18px; width: 100%;"')
-                html_table = html_table.replace('<th', '<th style="font-size: 20px; font-weight: bold; padding: 12px; background-color: #2196F3; color: white;"')
-                html_table = html_table.replace('<td', '<td style="font-size: 18px; padding: 10px; border-bottom: 1px solid #ddd;"')
-                
-                st.markdown(html_table, unsafe_allow_html=True)
+                # Exibir tabela
+                df_results = pd.DataFrame(results_data)
+                st.dataframe(df_results, use_container_width=True)
                 
                 # Separar por tipo
                 inside_bars = [s for s in found_setups if s['setup_info']['type'] == 'Inside Bar']
@@ -497,14 +441,7 @@ def main():
                             'Volume': f"{info['volume']:,}",
                             'Date': info['date']
                         })
-                    
-                    # Tabela HTML customizada
-                    inside_df = pd.DataFrame(inside_data)
-                    html_inside = inside_df.to_html(escape=False, index=False)
-                    html_inside = html_inside.replace('<table', '<table style="font-size: 18px; width: 100%;"')
-                    html_inside = html_inside.replace('<th', '<th style="font-size: 20px; font-weight: bold; padding: 12px; background-color: #FF9800; color: white;"')
-                    html_inside = html_inside.replace('<td', '<td style="font-size: 18px; padding: 10px; border-bottom: 1px solid #ddd;"')
-                    st.markdown(html_inside, unsafe_allow_html=True)
+                    st.dataframe(pd.DataFrame(inside_data), use_container_width=True)
                 
                 if hammers:
                     st.subheader(f"Hammer Setups ({len(hammers)})")
@@ -519,14 +456,7 @@ def main():
                             'Volume': f"{info['volume']:,}",
                             'Date': info['date']
                         })
-                    
-                    # Tabela HTML customizada
-                    hammer_df = pd.DataFrame(hammer_data)
-                    html_hammer = hammer_df.to_html(escape=False, index=False)
-                    html_hammer = html_hammer.replace('<table', '<table style="font-size: 18px; width: 100%;"')
-                    html_hammer = html_hammer.replace('<th', '<th style="font-size: 20px; font-weight: bold; padding: 12px; background-color: #4CAF50; color: white;"')
-                    html_hammer = html_hammer.replace('<td', '<td style="font-size: 18px; padding: 10px; border-bottom: 1px solid #ddd;"')
-                    st.markdown(html_hammer, unsafe_allow_html=True)
+                    st.dataframe(pd.DataFrame(hammer_data), use_container_width=True)
                 
                 if green_2d:
                     st.subheader(f"2D Green Monthly ({len(green_2d)})")
@@ -546,14 +476,7 @@ def main():
                             'Volume': f"{info['volume']:,}",
                             'Date': info['date']
                         })
-                    
-                    # Tabela HTML customizada
-                    green_2d_df = pd.DataFrame(green_2d_data)
-                    html_green = green_2d_df.to_html(escape=False, index=False)
-                    html_green = html_green.replace('<table', '<table style="font-size: 18px; width: 100%;"')
-                    html_green = html_green.replace('<th', '<th style="font-size: 20px; font-weight: bold; padding: 12px; background-color: #2196F3; color: white;"')
-                    html_green = html_green.replace('<td', '<td style="font-size: 18px; padding: 10px; border-bottom: 1px solid #ddd;"')
-                    st.markdown(html_green, unsafe_allow_html=True)
+                    st.dataframe(pd.DataFrame(green_2d_data), use_container_width=True)
                 
                 # Botão de download dos resultados
                 if st.button("Download Resultados CSV"):
