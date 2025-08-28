@@ -3,19 +3,21 @@ import pandas as pd
 
 st.set_page_config(layout="wide")
 
-st.markdown("<h1 style='text-align:center;'>📊 Scanner TheStrat</h1>", unsafe_allow_html=True)
-
 # ======== FILTROS NO TOPO ========
-col1, col2, col3 = st.columns([2,2,2])
+col1, col2, col3 = st.columns([2,3,1])
 
 with col1:
     timeframe = st.selectbox("⏳ Timeframe", ["1D","1W","1M"])
 
 with col2:
-    setups = st.multiselect("🧩 Setups", ["Inside Bar", "Hammer", "2D Green", "Combos"], default=["Inside Bar"])
+    setups = st.multiselect(
+        "🧩 Setups", 
+        ["Inside Bar", "Hammer", "2D Green", "Combos"], 
+        default=["Inside Bar"]
+    )
 
 with col3:
-    run = st.button("🚀 Iniciar Scanner", use_container_width=True)
+    run = st.button("🚀 Scanner", use_container_width=True)
 
 st.markdown("---")
 
