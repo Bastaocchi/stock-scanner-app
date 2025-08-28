@@ -40,17 +40,28 @@ st.markdown("""
         margin: 0.2rem;
         display: inline-block;
     }
-    /* Aumentar tamanho da fonte das tabelas */
+    /* Aumentar MUITO mais o tamanho da fonte das tabelas */
     .stDataFrame {
-        font-size: 16px !important;
+        font-size: 20px !important;
     }
     .stDataFrame td {
-        font-size: 16px !important;
-        padding: 12px !important;
+        font-size: 20px !important;
+        padding: 15px !important;
+        line-height: 1.4 !important;
     }
     .stDataFrame th {
-        font-size: 18px !important;
+        font-size: 22px !important;
         font-weight: bold !important;
+        padding: 18px !important;
+        line-height: 1.4 !important;
+    }
+    /* Força o tamanho em todos os elementos da tabela */
+    div[data-testid="stDataFrame"] table {
+        font-size: 20px !important;
+    }
+    div[data-testid="stDataFrame"] table td,
+    div[data-testid="stDataFrame"] table th {
+        font-size: 20px !important;
         padding: 15px !important;
     }
     /* Estilo para métricas */
@@ -60,6 +71,11 @@ st.markdown("""
         border-radius: 10px;
         padding: 10px;
         text-align: center;
+    }
+    /* Aumentar fonte dos subtítulos das seções */
+    .stMarkdown h3 {
+        font-size: 1.8rem !important;
+        font-weight: bold !important;
     }
 </style>
 """, unsafe_allow_html=True)
