@@ -234,7 +234,7 @@ def get_stock_data(symbol, period='1y', interval='1d'):
 
 def main():
     st.markdown('<h1 class="main-header">Scanner de Setups Profissional</h1>', unsafe_allow_html=True)
-    st.markdown("**Análise automatizada de Inside Bars e Hammer Setups em 664 símbolos**")
+    st.markdown("**Análise automatizada de Inside Bars, Hammer Setups e 2D Green Monthly em até 664 símbolos**")
     
     # Sidebar
     st.sidebar.header("Configurações")
@@ -256,13 +256,14 @@ def main():
     st.sidebar.subheader("Setups para Detectar:")
     detect_inside_bar_flag = st.sidebar.checkbox("Inside Bar", value=True)
     detect_hammer_flag = st.sidebar.checkbox("Hammer Setup", value=True)
+    detect_2d_green_flag = st.sidebar.checkbox("2D Green Monthly", value=True)
     
     # Limite de símbolos para análise
     max_symbols = st.sidebar.slider("Máximo de símbolos para analisar:", 10, len(SYMBOLS), min(100, len(SYMBOLS)))
     
     # Botão para iniciar scan
     if st.sidebar.button("Iniciar Scanner", type="primary"):
-        if not detect_inside_bar_flag and not detect_hammer_flag:
+        if not detect_inside_bar_flag and not detect_hammer_flag and not detect_2d_green_flag:
             st.error("Selecione pelo menos um setup para detectar!")
             return
             
@@ -304,7 +305,6 @@ def main():
                 
                 if df is not None and len(df) >= 10:
                     setup_found = False
-                    setup_info = None
                     
                     # Detectar Inside Bar
                     if detect_inside_bar_flag:
@@ -315,7 +315,6 @@ def main():
                                 'setup_info': info
                             })
                             setup_found = True
-                            setup_info = info
                     
                     # Detectar Hammer Setup
                     if detect_hammer_flag and not setup_found:
@@ -326,7 +325,16 @@ def main():
                                 'setup_info': info
                             })
                             setup_found = True
-                            setup_info = info
+                    
+                    # Detectar 2D Green Monthly
+                    if detect_2d_green_flag and not setup_found:
+                        is_2d_green, info = detect_2d_green_monthly(df)
+                        if is_2d_green:
+                            found_setups.append({
+                                'symbol': symbol,
+                                'setup_info': info
+                            })
+                            setup_found = True
                 
                 processed_count += 1
                 
@@ -370,13 +378,24 @@ def main():
                             'Volume': f"{info['volume']:,}",
                             'Date': info['date']
                         })
-                    else:  # Hammer Setup
+                    elif info['type'] == 'Hammer Setup':
                         results_data.append({
                             'Symbol': symbol,
                             'Setup': 'Hammer Setup',
                             'Price': f"${info['price']:.2f}",
                             'Recovery %': f"+{info['recovery_pct']:.2f}%",
                             'Broke Level': f"${info['broke_level']:.2f}",
+                            'Volume': f"{info['volume']:,}",
+                            'Date': info['date']
+                        })
+                    elif info['type'] == '2D Green Monthly':
+                        results_data.append({
+                            'Symbol': symbol,
+                            'Setup': '2D Green Monthly',
+                            'Price': f"${info['price']:.2f}",
+                            'Broke Level': f"${info['broke_level']:.2f}",
+                            'Break %': f"-{info['break_pct']:.2f}%",
+                            'Recovery %': f"+{info['recovery_pct']:.2f}%",
                             'Volume': f"{info['volume']:,}",
                             'Date': info['date']
                         })
@@ -388,6 +407,7 @@ def main():
                 # Separar por tipo
                 inside_bars = [s for s in found_setups if s['setup_info']['type'] == 'Inside Bar']
                 hammers = [s for s in found_setups if s['setup_info']['type'] == 'Hammer Setup']
+                green_2d = [s for s in found_setups if s['setup_info']['type'] == '2D Green Monthly']
                 
                 if inside_bars:
                     st.subheader(f"Inside Bars ({len(inside_bars)})")
@@ -417,6 +437,23 @@ def main():
                             'Date': info['date']
                         })
                     st.dataframe(pd.DataFrame(hammer_data), use_container_width=True)
+                
+                if green_2d:
+                    st.subheader(f"2D Green Monthly ({len(green_2d)})")
+                    green_2d_data = []
+                    for setup in green_2d:
+                        info = setup['setup_info']
+                        green_2d_data.append({
+                            'Symbol': setup['symbol'],
+                            'Price': f"${info['price']:.2f}",
+                            'Broke Level': f"${info['broke_level']:.2f}",
+                            'Current Low': f"${info['current_low']:.2f}",
+                            'Break %': f"-{info['break_pct']:.2f}%",
+                            'Recovery %': f"+{info['recovery_pct']:.2f}%",
+                            'Volume': f"{info['volume']:,}",
+                            'Date': info['date']
+                        })
+                    st.dataframe(pd.DataFrame(green_2d_data), use_container_width=True)
                 
                 # Botão de download dos resultados
                 if st.button("Download Resultados CSV"):
