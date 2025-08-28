@@ -148,7 +148,7 @@ def detect_inside_bar(df):
     return False, None
 
 def detect_2d_green_monthly(df):
-    """Detecta 2D Green Monthly: rompeu mínima da vela mensal anterior, mas hoje está verde"""
+    """Detecta 2D Green Monthly: rompeu mínima da vela mensal anterior, mas hoje está verde, SEM superar a máxima anterior"""
     if len(df) < 2:
         return False, None
     
@@ -157,12 +157,14 @@ def detect_2d_green_monthly(df):
     
     # Condições para 2D Green Monthly:
     # 1. Vela mensal atual rompeu a mínima da vela mensal anterior
-    # 2. Mas a vela mensal atual fechou verde (close > open)
+    # 2. Vela mensal atual fechou verde (close > open)
+    # 3. Vela mensal atual NÃO superou a máxima da vela mensal anterior
     
     broke_previous_monthly_low = current['Low'] < previous['Low']
     monthly_candle_is_green = current['Close'] > current['Open']
+    did_not_exceed_previous_high = current['High'] <= previous['High']
     
-    is_2d_green_monthly = broke_previous_monthly_low and monthly_candle_is_green
+    is_2d_green_monthly = broke_previous_monthly_low and monthly_candle_is_green and did_not_exceed_previous_high
     
     if is_2d_green_monthly:
         # Calcular métricas
@@ -180,7 +182,9 @@ def detect_2d_green_monthly(df):
             'price': current['Close'],
             'open_price': current['Open'],
             'current_low': current['Low'],
+            'current_high': current['High'],
             'previous_low': previous['Low'],
+            'previous_high': previous['High'],
             'break_amount': break_amount,
             'break_pct': break_percentage,
             'monthly_recovery_pct': monthly_recovery,
@@ -253,18 +257,23 @@ def main():
         "Monthly (1M)": ("5y", "1mo")
     }
     
-    selected_timeframe = st.sidebar.selectbox(
-        "Timeframe:",
-        list(timeframes.keys()),
-        index=0
-    )
-    
+    # Seleção de setups primeiro para condicionar timeframes
     st.sidebar.subheader("Setups para Detectar:")
     detect_inside_bar_flag = st.sidebar.checkbox("Inside Bar", value=True)
     detect_hammer_flag = st.sidebar.checkbox("Hammer Setup", value=True)
-    detect_2d_green_flag = st.sidebar.checkbox("2D Green Monthly", value=True)
+    detect_2d_green_flag = st.sidebar.checkbox("2D Green Monthly", value=False)
     
-    st.sidebar.info("💡 2D Green Monthly: Recomendado usar com timeframe Monthly para melhor resultado")
+    # Condicionar seleção de timeframe baseado no setup 2D Green Monthly
+    if detect_2d_green_flag:
+        st.sidebar.info("🔒 2D Green Monthly selecionado - Timeframe fixado em Monthly")
+        selected_timeframe = "Monthly (1M)"
+        st.sidebar.markdown("**Timeframe: Monthly (1M)** *(fixo para 2D Green)*")
+    else:
+        selected_timeframe = st.sidebar.selectbox(
+            "Timeframe:",
+            list(timeframes.keys()),
+            index=0
+        )
     
     # Limite de símbolos para análise
     max_symbols = st.sidebar.slider("Máximo de símbolos para analisar:", 10, len(SYMBOLS), min(100, len(SYMBOLS)))
@@ -403,7 +412,9 @@ def main():
                             'Price': f"${info['price']:.2f}",
                             'Monthly Change': f"+{info['monthly_change_pct']:.2f}%",
                             'Previous Low': f"${info['previous_low']:.2f}",
+                            'Previous High': f"${info['previous_high']:.2f}",
                             'Current Low': f"${info['current_low']:.2f}",
+                            'Current High': f"${info['current_high']:.2f}",
                             'Break Amount': f"${info['break_amount']:.2f}",
                             'Volume': f"{info['volume']:,}",
                             'Date': info['date']
@@ -457,7 +468,9 @@ def main():
                             'Price': f"${info['price']:.2f}",
                             'Monthly Change': f"+{info['monthly_change_pct']:.2f}%",
                             'Previous Low': f"${info['previous_low']:.2f}",
+                            'Previous High': f"${info['previous_high']:.2f}",
                             'Current Low': f"${info['current_low']:.2f}",
+                            'Current High': f"${info['current_high']:.2f}",
                             'Break Amount': f"${info['break_amount']:.2f}",
                             'Recovery': f"+{info['monthly_recovery_pct']:.2f}%",
                             'Volume': f"{info['volume']:,}",
