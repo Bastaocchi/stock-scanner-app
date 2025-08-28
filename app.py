@@ -77,7 +77,7 @@ def detect_strat_combo(df, lookback=3):
 def main():
     # ======== CONTROLES NO TOPO ========
     st.markdown("### ⚙️ Configurações")
-    col1, col2, col3 = st.columns([2,2,1])
+    col1, col2, col3 = st.columns([2,2,2])
 
     with col1:
         timeframes = {
@@ -91,7 +91,13 @@ def main():
         max_symbols = st.slider("📈 Máximo de símbolos", 5, len(SYMBOLS), min(50, len(SYMBOLS)))
 
     with col3:
-        start_button = st.button("🚀 Iniciar Scanner", use_container_width=True)
+        st.markdown("### 🧩 Setups para Detectar")
+        detect_inside_bar = st.checkbox("Inside Bar (1)", value=True)
+        detect_hammer = st.checkbox("Hammer Setup", value=False)
+        detect_2d_green = st.checkbox("2D Green Monthly", value=False)
+        detect_combos = st.checkbox("TheStrat Combos (2-1-2, 3-1-2...)", value=True)
+
+    start_button = st.button("🚀 Iniciar Scanner", use_container_width=True)
 
     st.markdown("---")
 
@@ -113,14 +119,50 @@ def main():
             status_placeholder.text(f"🔍 Analisando {symbol}...")
             df = get_stock_data(symbol, period, interval)
             if df is not None and len(df) > 5:
-                combo = detect_strat_combo(df, lookback=3)
-                if combo:
-                    results.append({
-                        "Symbol": symbol,
-                        "Combo": combo,
-                        "Price": f"${df.iloc[-1]['Close']:.2f}",
-                        "Date": df.index[-1].strftime("%Y-%m-%d")
-                    })
+                # --- Inside Bar
+                if detect_inside_bar:
+                    curr, prev = df.iloc[-1], df.iloc[-2]
+                    if curr["High"] < prev["High"] and curr["Low"] > prev["Low"]:
+                        results.append({
+                            "Symbol": symbol,
+                            "Setup": "Inside Bar (1)",
+                            "Price": f"${curr['Close']:.2f}",
+                            "Date": df.index[-1].strftime("%Y-%m-%d")
+                        })
+                # --- Hammer Setup (simples exemplo)
+                if detect_hammer:
+                    curr, prev = df.iloc[-1], df.iloc[-2]
+                    body = abs(curr["Close"] - curr["Open"])
+                    total = curr["High"] - curr["Low"]
+                    lower_shadow = min(curr["Open"], curr["Close"]) - curr["Low"]
+                    if body <= 0.4*total and lower_shadow >= 2*body and curr["Close"] > curr["Open"] and curr["Low"] < prev["Low"]:
+                        results.append({
+                            "Symbol": symbol,
+                            "Setup": "Hammer Setup",
+                            "Price": f"${curr['Close']:.2f}",
+                            "Date": df.index[-1].strftime("%Y-%m-%d")
+                        })
+                # --- 2D Green Monthly
+                if detect_2d_green and interval == "1mo":
+                    curr, prev = df.iloc[-1], df.iloc[-2]
+                    if curr["Low"] < prev["Low"] and curr["Close"] > curr["Open"] and curr["High"] <= prev["High"]:
+                        results.append({
+                            "Symbol": symbol,
+                            "Setup": "2D Green Monthly",
+                            "Price": f"${curr['Close']:.2f}",
+                            "Date": df.index[-1].strftime("%Y-%m-%d")
+                        })
+                # --- Combos
+                if detect_combos:
+                    combo = detect_strat_combo(df, lookback=3)
+                    if combo:
+                        results.append({
+                            "Symbol": symbol,
+                            "Setup": combo,
+                            "Price": f"${df.iloc[-1]['Close']:.2f}",
+                            "Date": df.index[-1].strftime("%Y-%m-%d")
+                        })
+
             progress = (i+1)/max_symbols
             progress_bar.progress(progress)
             processed_metric.metric("Processados", str(i+1))
@@ -141,7 +183,7 @@ def main():
                                file_name=f"strat_results_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
                                mime="text/csv")
         else:
-            st.warning("Nenhum combo TheStrat encontrado.")
+            st.warning("Nenhum setup encontrado.")
 
 if __name__ == "__main__":
     main()
