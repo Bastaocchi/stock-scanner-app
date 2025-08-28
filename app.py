@@ -1,68 +1,56 @@
-# Processar símbolos com controle de rate limiting
+# Processar símbolos
         symbols_to_process = SYMBOLS[:max_symbols]
-        batch_size = 10  # Processar em lotes menores
-        batch_delay = 3  # Pausa entre lotes em segundos
         
-        for batch_start in range(0, len(symbols_to_process), batch_size):
-            batch_end = min(batch_start + batch_size, len(symbols_to_process))
-            current_batch = symbols_to_process[batch_start:batch_end]
+        for i, symbol in enumerate(symbols_to_process):
+            status_text.text(f"Analisando {symbol} ({i + 1}/{len(symbols_to_process)})...")
             
-            # Processar lote atual
-            for i, symbol in enumerate(current_batch):
-                overall_index = batch_start + i
-                status_text.text(f"Analisando {symbol} ({overall_index + 1}/{len(symbols_to_process)})...")
+            try:
+                # Buscar dados
+                df = get_stock_data(symbol, period, interval)
                 
-                try:
-                    # Buscar dados
-                    df = get_stock_data(symbol, period, interval)
+                if df is not None and len(df) >= 10:
+                    setup_found = False
+                    setup_info = None
                     
-                    if df is not None and len(df) >= 10:
-                        setup_found = False
-                        setup_info = None
-                        
-                        # Detectar Inside Bar
-                        if detect_inside_bar_flag:
-                            is_inside, info = detect_inside_bar(df)
-                            if is_inside:
-                                found_setups.append({
-                                    'symbol': symbol,
-                                    'setup_info': info
-                                })
-                                setup_found = True
-                                setup_info = info
-                        
-                        # Detectar Hammer Setup
-                        if detect_hammer_flag and not setup_found:
-                            is_hammer, info = detect_hammer_setup(df)
-                            if is_hammer:
-                                found_setups.append({
-                                    'symbol': symbol,
-                                    'setup_info': info
-                                })
-                                setup_found = True
-                                setup_info = info
+                    # Detectar Inside Bar
+                    if detect_inside_bar_flag:
+                        is_inside, info = detect_inside_bar(df)
+                        if is_inside:
+                            found_setups.append({
+                                'symbol': symbol,
+                                'setup_info': info
+                            })
+                            setup_found = True
+                            setup_info = info
                     
-                    processed_count += 1
-                    
-                except Exception as e:
-                    error_count += 1
-                    st.sidebar.error(f"Erro em {symbol}: {str(e)}")
+                    # Detectar Hammer Setup
+                    if detect_hammer_flag and not setup_found:
+                        is_hammer, info = detect_hammer_setup(df)
+                        if is_hammer:
+                            found_setups.append({
+                                'symbol': symbol,
+                                'setup_info': info
+                            })
+                            setup_found = True
+                            setup_info = info
                 
-                # Atualizar métricas
-                progress = (overall_index + 1) / len(symbols_to_process)
-                progress_bar.progress(progress)
+                processed_count += 1
                 
-                processed_metric.metric("Processados", str(processed_count))
-                found_metric.metric("Setups Encontrados", str(len(found_setups)))
-                errors_metric.metric("Erros", str(error_count))
-                progress_metric.metric("Progresso", f"{progress*100:.1f}%")
-                
-                # Pausa entre símbolos para evitar rate limiting
-                time.sleep(0.2)
+            except Exception as e:
+                error_count += 1
+                st.sidebar.error(f"Erro em {symbol}: {str(e)}")
             
-            # Pausa maior entre lotes
-            if batch_end < len(symbols_to_process):
-                status_text.text(f"Pausa de {batch_delay}import streamlit as st
+            # Atualizar métricas
+            progress = (i + 1) / len(symbols_to_process)
+            progress_bar.progress(progress)
+            
+            processed_metric.metric("Processados", str(processed_count))
+            found_metric.metric("Setups Encontrados", str(len(found_setups)))
+            errors_metric.metric("Erros", str(error_count))
+            progress_metric.metric("Progresso", f"{progress*100:.1f}%")
+            
+            # Pausa para evitar rate limiting
+            time.sleep(0.2)import streamlit as st
 import yfinance as yf
 import pandas as pd
 import numpy as np
