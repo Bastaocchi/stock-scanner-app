@@ -33,18 +33,97 @@ st.markdown("""
         margin: 0.5rem 0;
     }
     .setup-found {
-        background: linear-gradient(45deg, #4CAF50, #45a049);
+        background: linear-gradient(45deg, #2196F3, #1976D2);
         color: white;
         padding: 0.5rem 1rem;
         border-radius: 5px;
         margin: 0.2rem;
         display: inline-block;
     }
+    /* Aumentar tamanho da fonte das tabelas */
+    .stDataFrame {
+        font-size: 16px !important;
+    }
+    .stDataFrame td {
+        font-size: 16px !important;
+        padding: 12px !important;
+    }
+    .stDataFrame th {
+        font-size: 18px !important;
+        font-weight: bold !important;
+        padding: 15px !important;
+    }
+    /* Estilo para métricas */
+    .metric-container {
+        background: #f0f8ff;
+        border: 2px solid #2196F3;
+        border-radius: 10px;
+        padding: 10px;
+        text-align: center;
+    }
 </style>
 """, unsafe_allow_html=True)
 
-# Lista de símbolos do seu arquivo CSV (seus 664 tickers exatos)
-SYMBOLS = ["A","AAL","AAPL","ABBV","ABNB","ABT","ACGL","ACN","ADBE","ADI","ADM","ADP","ADSK","AEE","AEP","AES","AFL","AFRM","AIG","AIZ","AJG","AKAM","ALB","ALGN","ALK","ALL","ALLE","AM","AMAT","AMCR","AMD","AME","AMGN","AMP","AMT","AMZN","ANET","AON","AOS","APA","APD","APH","APO","ARCC","ARE","ARTNA","ASML","ATO","AVB","AVGO","AVY","AWK","AXON","AXP","AZN","AZO","BA","BABA","BAC","BALL","BAX","BBDC","BBY","BDX","BE","BEN","BG","BIDU","BIIB","BILL","BIZD","BK","BKNG","BKR","BLDP","BLK","BMO","BMY","BNS","BP","BR","BRO","BSX","BX","BXP","BXSL","BYND","C","CAG","CAH","CAPL","CARR","CAT","CB","CBOE","CBRE","CCI","CCL","CCO","CDNS","CDW","CDZI","CEG","CF","CFG","CGBD","CHD","CHKP","CHRW","CHTR","CI","CINF","CL","CLX","CM","CMCSA","CME","CMG","CMI","CMS","CNC","CNI","CNP","CNQ","COF","COIN","COO","COP","COR","COST","CP","CPAY","CPB","CPRT","CPT","CRL","CRM","CRWD","CSCO","CSGP","CSIQ","CSX","CTAS","CTRA","CTSH","CTVA","CVLT","CVS","CVX","CWT","CYBR","CZR","D","DAL","DASH","DAY","DD","DDOG","DE","DECK","DELL","DG","DGX","DHI","DHR","DIS","DLR","DLTR","DMLP","DOC","DOCN","DOCU","DOL","DOV","DOW","DPZ","DQ","DRI","DTE","DUK","DVA","DVN","DXCM","EA","EBAY","ECL","ED","EFX","EG","EIX","EL","ELV","EME","EMN","EMR","ENB","ENPH","EOG","EPAM","EPD","EQIX","EQR","EQT","ERIE","ES","ESS","ESTC","ET","ETN","ETR","EVRG","EW","EXC","EXE","EXPD","EXPE","EXR","F","FANG","FAST","FCEL","FCX","FDS","FDX","FE","FFIV","FI","FICO","FIS","FITB","FLEX","FNF","FNV","FOUR","FOX","FOXA","FROG","FRT","FSK","FSLR","FTNT","FTV","GAIN","GBDC","GD","GDDY","GDOT","GE","GEHC","GEL","GEN","GEV","GILD","GIS","GL","GLW","GM","GNRC","GOOG","GOOGL","GPC","GPN","GRMN","GS","GSBD","GSK","GWRE","GWRS","GWW","HAL","HAS","HBAN","HCA","HD","HESM","HIG","HII","HLT","HOLX","HON","HOOD","HPE","HPQ","HRL","HSIC","HST","HSY","HTGC","HUBB","HUM","HWM","HYLN","IBKR","IBM","ICE","IDXX","IESC","IEX","IFF","INCY","INTC","INTU","INVH","IP","IPG","IQV","IR","IRM","ISRG","IT","ITW","IVZ","J","JBHT","JBL","JBLU","JCI","JD","JKHY","JKS","JNJ","JPM","K","KDP","KEY","KEYS","KHC","KIM","KKR","KLAC","KMB","KMI","KMX","KNTK","KO","KR","KVUE","L","LCID","LDOS","LEN","LH","LHX","LI","LII","LIN","LKQ","LLY","LMT","LNT","LOW","LRCX","LULU","LUV","LVS","LW","LYB","LYV","MA","MAA","MAIN","MAR","MAXN","MCD","MCHP","MCK","MCO","MDB","MDLZ","MDT","MDU","MET","META","MFC","MGM","MHK","MKC","MKTX","MLM","MMC","MMM","MNST","MO","MOH","MOS","MPC","MPLX","MPWR","MRK","MRNA","MRVL","MS","MSBI","MSCI","MSEX","MSFT","MSI","MTB","MTCH","MTD","MTZ","MU","NCLH","NDAQ","NDSN","NEE","NEM","NET","NEWT","NFG","NFLX","NI","NIO","NJR","NKE","NOC","NOW","NRG","NSC","NSIT","NTAP","NTES","NTRS","NU","NUE","NVDA","NVO","NVR","NWS","NWSA","NXPI","O","OCCI","ODFL","OGS","OKE","OKTA","OMC","ON","OPEN","ORCL","ORLY","OTEX","OTIS","OXY","PAA","PANW","PAYC","PAYX","PBT","PCAR","PCG","PDD","PEG","PEP","PFE","PFG","PG","PGR","PH","PHM","PINS","PKG","PLBY","PLD","PLTR","PLUG","PM","PNC","PNR","PNW","PODD","POOL","PPG","PPL","PRIM","PRLB","PRU","PSA","PSEC","PSTG","PSX","PTC","PURE","PWR","PYPL","QCOM","QLYS","QRVO","QSR","RBA","RBLX","RCL","REAL","REG","REGN","RF","RIVN","RJF","RL","RMD","ROAD","ROK","ROKU","ROL","ROP","ROST","RPD","RSG","RTX","RUN","RVTY","RXO","RY","S","SAIA","SAIL","SAP","SBAC","SBUX","SCHW","SEDG","SHEL","SHOP","SHW","SJM","SJT","SKYW","SLB","SLF","SMCI","SNA","SNAP","SNOW","SNPS","SNY","SO","SOFI","SOL","SOLV","SPG","SPGI","SPWR","SRE","STC","STE","STLD","STRL","STT","STX","STZ","SU","SW","SWK","SWKS","SWX","SYF","SYK","SYY","T","TAP","TCEHY","TD","TDG","TDY","TEAM","TECH","TEL","TENB","TER","TFC","TFI","TGT","TJX","TKO","TM","TMO","TMUS","TPL","TPR","TRGP","TRI","TRMB","TROW","TRV","TSCO","TSLA","TSLX","TSM","TSN","TT","TTD","TTE","TTWO","TWLO","TXN","TXT","TYL","U","UAL","UBER","UDR","UGI","UHS","UL","ULTA","UNH","UNP","UPS","UPST","URI","USAC","USB","USFD","V","VEEV","VICI","VLO","VLTO","VMC","VOC","VRNS","VRSK","VRSN","VRTX","VST","VTR","VTRS","VZ","WAB","WAT","WBA","WBD","WCN","WDAY","WDC","WEC","WELL","WES","WFC","WM","WMB","WMT","WPM","WRB","WSM","WSO","WST","WTW","WY","WYNN","XEL","XOM","XPEV","XYL","XYZ","YORW","YUM","ZBH","ZBRA","ZM","ZS","ZTS"]
+# Função para carregar símbolos de diferentes fontes
+@st.cache_data(ttl=3600)
+def load_symbols():
+    """Carrega símbolos de CSV local ou Google Sheets"""
+    
+    # Opção 1: Tentar carregar de arquivo CSV local (se existir)
+    try:
+        import os
+        if os.path.exists('symbols.csv'):
+            df = pd.read_csv('symbols.csv')
+            if 'Symbol' in df.columns:
+                symbols = df['Symbol'].dropna().tolist()
+                st.sidebar.success(f"✅ Carregados {len(symbols)} símbolos do arquivo CSV")
+                return symbols
+    except Exception as e:
+        st.sidebar.warning(f"Não foi possível carregar CSV local: {e}")
+    
+    # Opção 2: Google Sheets (se URL fornecida)
+    google_sheet_url = st.sidebar.text_input(
+        "URL do Google Sheets (opcional):",
+        placeholder="https://docs.google.com/spreadsheets/d/...",
+        help="Cole a URL pública do seu Google Sheets com os símbolos"
+    )
+    
+    if google_sheet_url:
+        try:
+            # Converter URL do Google Sheets para CSV
+            if '/edit' in google_sheet_url:
+                csv_url = google_sheet_url.replace('/edit#gid=', '/export?format=csv&gid=')
+                csv_url = csv_url.replace('/edit', '/export?format=csv')
+            else:
+                csv_url = google_sheet_url
+            
+            df = pd.read_csv(csv_url)
+            
+            # Tentar encontrar coluna com símbolos
+            symbol_column = None
+            for col in ['Symbol', 'symbol', 'Ticker', 'ticker', 'SYMBOL']:
+                if col in df.columns:
+                    symbol_column = col
+                    break
+            
+            if symbol_column:
+                symbols = df[symbol_column].dropna().tolist()
+                st.sidebar.success(f"✅ Carregados {len(symbols)} símbolos do Google Sheets")
+                return symbols
+            else:
+                st.sidebar.error("Não foi possível encontrar coluna de símbolos. Use 'Symbol' como cabeçalho.")
+                
+        except Exception as e:
+            st.sidebar.error(f"Erro ao carregar Google Sheets: {e}")
+    
+    # Fallback: Lista padrão
+    default_symbols = ["A","AAL","AAPL","ABBV","ABNB","ABT","ACGL","ACN","ADBE","ADI","ADM","ADP","ADSK","AEE","AEP","AES","AFL","AFRM","AIG","AIZ","AJG","AKAM","ALB","ALGN","ALK","ALL","ALLE","AM","AMAT","AMCR","AMD","AME","AMGN","AMP","AMT","AMZN","ANET","AON","AOS","APA","APD","APH","APO","ARCC","ARE","ARTNA","ASML","ATO","AVB","AVGO","AVY","AWK","AXON","AXP","AZN","AZO","BA","BABA","BAC","BALL","BAX","BBDC","BBY","BDX","BE","BEN","BG","BIDU","BIIB","BILL","BIZD","BK","BKNG","BKR","BLDP","BLK","BMO","BMY","BNS","BP","BR","BRO","BSX","BX","BXP","BXSL","BYND","C","CAG","CAH","CAPL","CARR","CAT","CB","CBOE","CBRE","CCI","CCL","CCO","CDNS","CDW","CDZI","CEG","CF","CFG","CGBD","CHD","CHKP","CHRW","CHTR","CI","CINF","CL","CLX","CM","CMCSA","CME","CMG","CMI","CMS","CNC","CNI","CNP","CNQ","COF","COIN","COO","COP","COR","COST","CP","CPAY","CPB","CPRT","CPT","CRL","CRM","CRWD","CSCO","CSGP","CSIQ","CSX","CTAS","CTRA","CTSH","CTVA","CVLT","CVS","CVX","CWT","CYBR","CZR","D","DAL","DASH","DAY","DD","DDOG","DE","DECK","DELL","DG","DGX","DHI","DHR","DIS","DLR","DLTR","DMLP","DOC","DOCN","DOCU","DOL","DOV","DOW","DPZ","DQ","DRI","DTE","DUK","DVA","DVN","DXCM","EA","EBAY","ECL","ED","EFX","EG","EIX","EL","ELV","EME","EMN","EMR","ENB","ENPH","EOG","EPAM","EPD","EQIX","EQR","EQT","ERIE","ES","ESS","ESTC","ET","ETN","ETR","EVRG","EW","EXC","EXE","EXPD","EXPE","EXR","F","FANG","FAST","FCEL","FCX","FDS","FDX","FE","FFIV","FI","FICO","FIS","FITB","FLEX","FNF","FNV","FOUR","FOX","FOXA","FROG","FRT","FSK","FSLR","FTNT","FTV","GAIN","GBDC","GD","GDDY","GDOT","GE","GEHC","GEL","GEN","GEV","GILD","GIS","GL","GLW","GM","GNRC","GOOG","GOOGL","GPC","GPN","GRMN","GS","GSBD","GSK","GWRE","GWRS","GWW","HAL","HAS","HBAN","HCA","HD","HESM","HIG","HII","HLT","HOLX","HON","HOOD","HPE","HPQ","HRL","HSIC","HST","HSY","HTGC","HUBB","HUM","HWM","HYLN","IBKR","IBM","ICE","IDXX","IESC","IEX","IFF","INCY","INTC","INTU","INVH","IP","IPG","IQV","IR","IRM","ISRG","IT","ITW","IVZ","J","JBHT","JBL","JBLU","JCI","JD","JKHY","JKS","JNJ","JPM","K","KDP","KEY","KEYS","KHC","KIM","KKR","KLAC","KMB","KMI","KMX","KNTK","KO","KR","KVUE","L","LCID","LDOS","LEN","LH","LHX","LI","LII","LIN","LKQ","LLY","LMT","LNT","LOW","LRCX","LULU","LUV","LVS","LW","LYB","LYV","MA","MAA","MAIN","MAR","MAXN","MCD","MCHP","MCK","MCO","MDB","MDLZ","MDT","MDU","MET","META","MFC","MGM","MHK","MKC","MKTX","MLM","MMC","MMM","MNST","MO","MOH","MOS","MPC","MPLX","MPWR","MRK","MRNA","MRVL","MS","MSBI","MSCI","MSEX","MSFT","MSI","MTB","MTCH","MTD","MTZ","MU","NCLH","NDAQ","NDSN","NEE","NEM","NET","NEWT","NFG","NFLX","NI","NIO","NJR","NKE","NOC","NOW","NRG","NSC","NSIT","NTAP","NTES","NTRS","NU","NUE","NVDA","NVO","NVR","NWS","NWSA","NXPI","O","OCCI","ODFL","OGS","OKE","OKTA","OMC","ON","OPEN","ORCL","ORLY","OTEX","OTIS","OXY","PAA","PANW","PAYC","PAYX","PBT","PCAR","PCG","PDD","PEG","PEP","PFE","PFG","PG","PGR","PH","PHM","PINS","PKG","PLBY","PLD","PLTR","PLUG","PM","PNC","PNR","PNW","PODD","POOL","PPG","PPL","PRIM","PRLB","PRU","PSA","PSEC","PSTG","PSX","PTC","PURE","PWR","PYPL","QCOM","QLYS","QRVO","QSR","RBA","RBLX","RCL","REAL","REG","REGN","RF","RIVN","RJF","RL","RMD","ROAD","ROK","ROKU","ROL","ROP","ROST","RPD","RSG","RTX","RUN","RVTY","RXO","RY","S","SAIA","SAIL","SAP","SBAC","SBUX","SCHW","SEDG","SHEL","SHOP","SHW","SJM","SJT","SKYW","SLB","SLF","SMCI","SNA","SNAP","SNOW","SNPS","SNY","SO","SOFI","SOL","SOLV","SPG","SPGI","SPWR","SRE","STC","STE","STLD","STRL","STT","STX","STZ","SU","SW","SWK","SWKS","SWX","SYF","SYK","SYY","T","TAP","TCEHY","TD","TDG","TDY","TEAM","TECH","TEL","TENB","TER","TFC","TFI","TGT","TJX","TKO","TM","TMO","TMUS","TPL","TPR","TRGP","TRI","TRMB","TROW","TRV","TSCO","TSLA","TSLX","TSM","TSN","TT","TTD","TTE","TTWO","TWLO","TXN","TXT","TYL","U","UAL","UBER","UDR","UGI","UHS","UL","ULTA","UNH","UNP","UPS","UPST","URI","USAC","USB","USFD","V","VEEV","VICI","VLO","VLTO","VMC","VOC","VRNS","VRSK","VRSN","VRTX","VST","VTR","VTRS","VZ","WAB","WAT","WBA","WBD","WCN","WDAY","WDC","WEC","WELL","WES","WFC","WM","WMB","WMT","WPM","WRB","WSM","WSO","WST","WTW","WY","WYNN","XEL","XOM","XPEV","XYL","XYZ","YORW","YUM","ZBH","ZBRA","ZM","ZS","ZTS"]
+    
+    st.sidebar.info(f"📋 Usando lista padrão com {len(default_symbols)} símbolos")
+    return default_symbols
+
+# Carregar símbolos
+SYMBOLS = load_symbols()
 
 def detect_inside_bar(df):
     """Detecta Inside Bar: máxima atual < máxima anterior E mínima atual > mínima anterior"""
@@ -62,7 +141,6 @@ def detect_inside_bar(df):
             'type': 'Inside Bar',
             'price': current['Close'],
             'change_pct': change_pct,
-            'range': f"${current['Low']:.2f} - ${current['High']:.2f}",
             'volume': current['Volume'],
             'date': current.name.strftime('%Y-%m-%d')
         }
@@ -144,8 +222,8 @@ def main():
     detect_inside_bar_flag = st.sidebar.checkbox("Inside Bar", value=True)
     detect_hammer_flag = st.sidebar.checkbox("Hammer Setup", value=True)
     
-    # Limite de símbolos para teste
-    max_symbols = st.sidebar.slider("Máximo de símbolos para analisar:", 10, 664, 100)
+    # Limite de símbolos para análise
+    max_symbols = st.sidebar.slider("Máximo de símbolos para analisar:", 10, len(SYMBOLS), min(100, len(SYMBOLS)))
     
     # Botão para iniciar scan
     if st.sidebar.button("Iniciar Scanner", type="primary"):
@@ -254,10 +332,8 @@ def main():
                             'Setup': 'Inside Bar',
                             'Price': f"${info['price']:.2f}",
                             'Change %': f"{info['change_pct']:.2f}%",
-                            'Range': info['range'],
                             'Volume': f"{info['volume']:,}",
-                            'Date': info['date'],
-                            'TradingView': f"https://www.tradingview.com/symbols/{symbol}/"
+                            'Date': info['date']
                         })
                     else:  # Hammer Setup
                         results_data.append({
@@ -267,8 +343,7 @@ def main():
                             'Recovery %': f"+{info['recovery_pct']:.2f}%",
                             'Broke Level': f"${info['broke_level']:.2f}",
                             'Volume': f"{info['volume']:,}",
-                            'Date': info['date'],
-                            'TradingView': f"https://www.tradingview.com/symbols/{symbol}/"
+                            'Date': info['date']
                         })
                 
                 # Exibir tabela
@@ -288,7 +363,6 @@ def main():
                             'Symbol': setup['symbol'],
                             'Price': f"${info['price']:.2f}",
                             'Change': f"{info['change_pct']:.2f}%",
-                            'Range': info['range'],
                             'Volume': f"{info['volume']:,}",
                             'Date': info['date']
                         })
