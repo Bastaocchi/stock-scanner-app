@@ -13,7 +13,9 @@ st.set_page_config(
     layout="wide"
 )
 
-st.markdown('<h1 style="text-align:center;">Scanner TheStrat 📊</h1>', unsafe_allow_html=True)
+st.markdown("""
+<h1 style="text-align:center; margin-bottom:30px;">📊 Scanner TheStrat by Rob Smith</h1>
+""", unsafe_allow_html=True)
 
 # ==============================
 # FUNÇÕES BASE
@@ -75,9 +77,14 @@ def detect_strat_combo(df, lookback=3):
 # APP PRINCIPAL
 # ==============================
 def main():
-    # ======== CONTROLES NO TOPO ========
-    st.markdown("### ⚙️ Configurações")
-    col1, col2, col3 = st.columns([2,2,2])
+    # ======== BARRA DE CONFIGURAÇÕES ========
+    st.markdown("""
+    <div style="background:#f5f7fa; padding:15px; border-radius:10px; margin-bottom:20px;">
+    <h3 style="margin-top:0;">⚙️ Configurações</h3>
+    </div>
+    """, unsafe_allow_html=True)
+
+    col1, col2, col3, col4 = st.columns([2,2,3,2])
 
     with col1:
         timeframes = {
@@ -88,23 +95,24 @@ def main():
         selected_timeframe = st.selectbox("⏳ Timeframe", list(timeframes.keys()), index=0)
 
     with col2:
-        max_symbols = st.slider("📈 Máximo de símbolos", 5, len(SYMBOLS), min(50, len(SYMBOLS)))
+        max_symbols = st.slider("📈 Máx. símbolos", 5, len(SYMBOLS), min(50, len(SYMBOLS)))
 
     with col3:
-        st.markdown("### 🧩 Setups para Detectar")
+        st.markdown("**🧩 Setups**")
         detect_inside_bar = st.checkbox("Inside Bar (1)", value=True)
         detect_hammer = st.checkbox("Hammer Setup", value=False)
         detect_2d_green = st.checkbox("2D Green Monthly", value=False)
-        detect_combos = st.checkbox("TheStrat Combos (2-1-2, 3-1-2...)", value=True)
+        detect_combos = st.checkbox("TheStrat Combos", value=True)
 
-    start_button = st.button("🚀 Iniciar Scanner", use_container_width=True)
+    with col4:
+        st.markdown("<br>", unsafe_allow_html=True)  # espaço
+        start_button = st.button("🚀 Iniciar Scanner", use_container_width=True)
 
-    st.markdown("---")
-
+    # ======== RESULTADOS ========
     if start_button:
         period, interval = timeframes[selected_timeframe]
 
-        # ======== MÉTRICAS ========
+        st.markdown("### 📊 Progresso da varredura")
         colm1, colm2, colm3 = st.columns(3)
         processed_metric = colm1.metric("Processados", "0")
         found_metric = colm2.metric("Setups", "0")
@@ -114,55 +122,35 @@ def main():
         status_placeholder = st.empty()
         results = []
 
-        # ======== LOOP PRINCIPAL ========
         for i, symbol in enumerate(SYMBOLS[:max_symbols]):
             status_placeholder.text(f"🔍 Analisando {symbol}...")
             df = get_stock_data(symbol, period, interval)
             if df is not None and len(df) > 5:
-                # --- Inside Bar
+                # Inside Bar
                 if detect_inside_bar:
                     curr, prev = df.iloc[-1], df.iloc[-2]
                     if curr["High"] < prev["High"] and curr["Low"] > prev["Low"]:
-                        results.append({
-                            "Symbol": symbol,
-                            "Setup": "Inside Bar (1)",
-                            "Price": f"${curr['Close']:.2f}",
-                            "Date": df.index[-1].strftime("%Y-%m-%d")
-                        })
-                # --- Hammer Setup (simples exemplo)
+                        results.append({"Symbol": symbol,"Setup": "Inside Bar (1)","Price": f"${curr['Close']:.2f}","Date": df.index[-1].strftime("%Y-%m-%d")})
+                # Hammer Setup
                 if detect_hammer:
                     curr, prev = df.iloc[-1], df.iloc[-2]
                     body = abs(curr["Close"] - curr["Open"])
                     total = curr["High"] - curr["Low"]
                     lower_shadow = min(curr["Open"], curr["Close"]) - curr["Low"]
                     if body <= 0.4*total and lower_shadow >= 2*body and curr["Close"] > curr["Open"] and curr["Low"] < prev["Low"]:
-                        results.append({
-                            "Symbol": symbol,
-                            "Setup": "Hammer Setup",
-                            "Price": f"${curr['Close']:.2f}",
-                            "Date": df.index[-1].strftime("%Y-%m-%d")
-                        })
-                # --- 2D Green Monthly
+                        results.append({"Symbol": symbol,"Setup": "Hammer Setup","Price": f"${curr['Close']:.2f}","Date": df.index[-1].strftime("%Y-%m-%d")})
+                # 2D Green Monthly
                 if detect_2d_green and interval == "1mo":
                     curr, prev = df.iloc[-1], df.iloc[-2]
                     if curr["Low"] < prev["Low"] and curr["Close"] > curr["Open"] and curr["High"] <= prev["High"]:
-                        results.append({
-                            "Symbol": symbol,
-                            "Setup": "2D Green Monthly",
-                            "Price": f"${curr['Close']:.2f}",
-                            "Date": df.index[-1].strftime("%Y-%m-%d")
-                        })
-                # --- Combos
+                        results.append({"Symbol": symbol,"Setup": "2D Green Monthly","Price": f"${curr['Close']:.2f}","Date": df.index[-1].strftime("%Y-%m-%d")})
+                # Combos
                 if detect_combos:
                     combo = detect_strat_combo(df, lookback=3)
                     if combo:
-                        results.append({
-                            "Symbol": symbol,
-                            "Setup": combo,
-                            "Price": f"${df.iloc[-1]['Close']:.2f}",
-                            "Date": df.index[-1].strftime("%Y-%m-%d")
-                        })
+                        results.append({"Symbol": symbol,"Setup": combo,"Price": f"${df.iloc[-1]['Close']:.2f}","Date": df.index[-1].strftime("%Y-%m-%d")})
 
+            # Atualiza métricas
             progress = (i+1)/max_symbols
             progress_bar.progress(progress)
             processed_metric.metric("Processados", str(i+1))
@@ -172,12 +160,11 @@ def main():
 
         status_placeholder.text("✅ Scanner concluído!")
 
-        # ======== RESULTADOS ========
+        # Resultados
         if results:
             st.success(f"{len(results)} setups encontrados!")
             df_results = pd.DataFrame(results)
             st.dataframe(df_results, use_container_width=True)
-
             csv = df_results.to_csv(index=False)
             st.download_button("📥 Baixar CSV", csv,
                                file_name=f"strat_results_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
