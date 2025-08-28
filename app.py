@@ -1,11 +1,12 @@
 import streamlit as st
 import yfinance as yf
 import pandas as pd
+import numpy as np
 import time
 from datetime import datetime
 
 # ==============================
-# CONFIG
+# CONFIG PÁGINA
 # ==============================
 st.set_page_config(page_title="Scanner TheStrat", layout="wide")
 
@@ -40,15 +41,48 @@ button[kind="primary"], button[kind="secondary"] { font-size: 18px !important; f
 # ==============================
 @st.cache_data(ttl=3600)
 def load_symbols():
-    # troque pela sua lista/planilha quando quiser
-    return ["AAPL","MSFT","TSLA","AMZN","NVDA","META","GOOGL","NFLX","AMD","IBM","JPM","BAC","XOM","CVX","KO","PEP","COST","AVGO","ORCL","INTC"]
+    # ajuste para sua fonte (CSV/Sheets) quando quiser
+    return [
+        "AAPL","MSFT","TSLA","AMZN","NVDA","META","GOOGL","NFLX","AMD","IBM",
+        "JPM","BAC","XOM","CVX","KO","PEP","COST","AVGO","ORCL","INTC"
+    ]
 
-@st.cache_data(ttl=3600)
+def _flatten_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """Se vier MultiIndex (ex.: ('AAPL','High')), achata pegando o último nível."""
+    if isinstance(df.columns, pd.MultiIndex):
+        df.columns = [c[-1] if isinstance(c, tuple) else c for c in df.columns]
+    return df
+
+def _standardize_ohlc(df: pd.DataFrame) -> pd.DataFrame:
+    """Renomeia colunas comuns para o formato Title e garante numéricos."""
+    # normaliza nomes
+    rename_map = {c: c.title() for c in df.columns}
+    df = df.rename(columns=rename_map)
+    # mantém apenas colunas esperadas se existirem
+    expected = ["Open","High","Low","Close","Volume"]
+    keep = [c for c in expected if c in df.columns]
+    df = df[keep].copy()
+    # converte para numérico
+    for c in keep:
+        df[c] = pd.to_numeric(df[c], errors="coerce")
+    # remove linhas totalmente NaN
+    df = df.dropna(how="all")
+    return df
+
+@st.cache_data(ttl=1800)
 def get_stock_data(symbol, period="1y", interval="1d"):
+    """Download seguro de dados, flatten + padronização."""
     try:
         df = yf.download(symbol, period=period, interval=interval, progress=False)
-        return None if df.empty else df
-    except:
+        if df is None or df.empty:
+            return None
+        df = _flatten_columns(df)
+        df = _standardize_ohlc(df)
+        # precisa pelo menos 2 velas para as comparações
+        if len(df) < 2 or not all(col in df.columns for col in ["Open","High","Low","Close"]):
+            return None
+        return df
+    except Exception:
         return None
 
 SYMBOLS = load_symbols()
@@ -56,18 +90,28 @@ SYMBOLS = load_symbols()
 # ==============================
 # THESTRAT
 # ==============================
-def classify_strat_bar(curr, prev):
-    if curr["High"] < prev["High"] and curr["Low"] > prev["Low"]:
-        return "1"      # inside
-    elif curr["High"] > prev["High"] and curr["Low"] < prev["Low"]:
-        return "3"      # outside
-    elif curr["High"] > prev["High"]:
-        return "2U"     # directional up
-    elif curr["Low"] < prev["Low"]:
-        return "2D"     # directional down
+def _scalar(v):
+    """Garante escalar (evita 'Series is ambiguous')."""
+    if isinstance(v, (pd.Series, np.ndarray, list)):
+        return float(v[-1])
+    return float(v)
+
+def classify_strat_bar(curr: pd.Series, prev: pd.Series):
+    try:
+        ch, cl, ph, pl = _scalar(curr["High"]), _scalar(curr["Low"]), _scalar(prev["High"]), _scalar(prev["Low"])
+    except Exception:
+        return None
+    if ch < ph and cl > pl:
+        return "1"
+    if ch > ph and cl < pl:
+        return "3"
+    if ch > ph:
+        return "2U"
+    if cl < pl:
+        return "2D"
     return None
 
-def detect_strat_combo(df, lookback=3):
+def detect_strat_combo(df: pd.DataFrame, lookback=3):
     if len(df) < lookback + 1:
         return None
     bars = []
@@ -89,8 +133,8 @@ def detect_strat_combo(df, lookback=3):
     }
     return combos.get(pattern, None)
 
-def check_ftfc(symbol):
-    """Full Timeframe Continuity: 1D, 1W, 1M alinhados"""
+def check_ftfc(symbol: str):
+    """Full Timeframe Continuity: 1D, 1W, 1M alinhados por cor (Close > Open)."""
     try:
         tf_map = {
             "1D": ("5d", "1d"),
@@ -99,17 +143,18 @@ def check_ftfc(symbol):
         }
         dirs = {}
         for tf, (period, interval) in tf_map.items():
-            df = yf.download(symbol, period=period, interval=interval, progress=False)
-            if df.empty:
+            df = get_stock_data(symbol, period=period, interval=interval)
+            if df is None or df.empty:
                 return None
             last = df.iloc[-1]
-            dirs[tf] = "UP" if last["Close"] > last["Open"] else "DOWN"
+            o, c = _scalar(last["Open"]), _scalar(last["Close"])
+            dirs[tf] = "UP" if c > o else "DOWN"
         return dirs["1D"] if len(set(dirs.values())) == 1 else None
-    except:
+    except Exception:
         return None
 
 def setup_bias(setup_str: str) -> str:
-    s = setup_str.lower()
+    s = (setup_str or "").lower()
     if "bearish" in s or "ftfc down" in s:
         return "Bearish"
     if "bullish" in s or "2d green monthly" in s or "ftfc up" in s or setup_str == "Hammer Setup":
@@ -126,14 +171,9 @@ def badge_for_bias(bias: str) -> str:
     return '<span class="badge badge-neutral">Neutral</span>'
 
 def row_class_for_bias(bias: str) -> str:
-    return {
-        "Bullish": "row-bullish",
-        "Bearish": "row-bearish",
-        "Neutral": "row-neutral"
-    }.get(bias, "row-neutral")
+    return {"Bullish":"row-bullish","Bearish":"row-bearish","Neutral":"row-neutral"}.get(bias,"row-neutral")
 
 def render_colored_table(df: pd.DataFrame):
-    # gera HTML com classes por linha
     headers = "".join([f"<th>{col}</th>" for col in df.columns])
     rows_html = []
     for _, row in df.iterrows():
@@ -153,10 +193,10 @@ def render_colored_table(df: pd.DataFrame):
     st.markdown(table_html, unsafe_allow_html=True)
 
 # ==============================
-# UI
+# APP
 # ==============================
 def main():
-    # filtros horizontais
+    # Filtros horizontais
     c1, c2, c3, c4 = st.columns([2,3,2,2])
 
     with c1:
@@ -190,47 +230,56 @@ def main():
         status = st.empty()
 
         results = []
-
         symbols_to_scan = SYMBOLS[:max_symbols]
         total = len(symbols_to_scan)
 
         for i, symbol in enumerate(symbols_to_scan):
             status.text(f"Analisando {symbol}...")
-            df = get_stock_data(symbol, period, interval)
+            df = get_stock_data(symbol, period=period, interval=interval)
+
             if df is not None and len(df) > 5:
                 curr, prev = df.iloc[-1], df.iloc[-2]
 
+                # Extrai escalares seguros
+                try:
+                    c_high, c_low = _scalar(curr["High"]), _scalar(curr["Low"])
+                    p_high, p_low = _scalar(prev["High"]), _scalar(prev["Low"])
+                    c_open, c_close = _scalar(curr["Open"]), _scalar(curr["Close"])
+                    p_low_scalar = p_low
+                except Exception:
+                    c_high = c_low = p_high = p_low = c_open = c_close = None
+
                 # Inside Bar
-                if inside:
-                    if curr["High"] < prev["High"] and curr["Low"] > prev["Low"]:
+                if inside and None not in (c_high, c_low, p_high, p_low):
+                    if (c_high < p_high) and (c_low > p_low):
                         results.append({
                             "Symbol": symbol,
                             "Setup": "Inside Bar",
-                            "Price": f"${curr['Close']:.2f}",
+                            "Price": f"${c_close:.2f}",
                             "Date": df.index[-1].strftime("%Y-%m-%d")
                         })
 
                 # Hammer
-                if hammer:
-                    body = abs(curr["Close"] - curr["Open"])
-                    total_range = curr["High"] - curr["Low"]
-                    lower_shadow = min(curr["Open"], curr["Close"]) - curr["Low"]
+                if hammer and None not in (c_high, c_low, c_open, c_close, p_low_scalar):
+                    body = abs(c_close - c_open)
+                    total_range = c_high - c_low
+                    lower_shadow = min(c_open, c_close) - c_low
                     if total_range > 0 and body <= 0.4*total_range and lower_shadow >= 2*body \
-                       and curr["Close"] > curr["Open"] and curr["Low"] < prev["Low"]:
+                       and (c_close > c_open) and (c_low < p_low_scalar):
                         results.append({
                             "Symbol": symbol,
                             "Setup": "Hammer Setup",
-                            "Price": f"${curr['Close']:.2f}",
+                            "Price": f"${c_close:.2f}",
                             "Date": df.index[-1].strftime("%Y-%m-%d")
                         })
 
-                # 2D Green Monthly (apenas se timeframe = 1M)
-                if green2d and interval == "1mo":
-                    if curr["Low"] < prev["Low"] and curr["Close"] > curr["Open"] and curr["High"] <= prev["High"]:
+                # 2D Green Monthly (somente no timeframe mensal)
+                if green2d and interval == "1mo" and None not in (c_high, c_low, c_open, c_close, p_high, p_low):
+                    if (c_low < p_low) and (c_close > c_open) and (c_high <= p_high):
                         results.append({
                             "Symbol": symbol,
                             "Setup": "2D Green Monthly",
-                            "Price": f"${curr['Close']:.2f}",
+                            "Price": f"${c_close:.2f}",
                             "Date": df.index[-1].strftime("%Y-%m-%d")
                         })
 
@@ -241,7 +290,7 @@ def main():
                         results.append({
                             "Symbol": symbol,
                             "Setup": combo_name,
-                            "Price": f"${curr['Close']:.2f}",
+                            "Price": f"${c_close:.2f}" if c_close is not None else "",
                             "Date": df.index[-1].strftime("%Y-%m-%d")
                         })
 
@@ -252,17 +301,17 @@ def main():
                         results.append({
                             "Symbol": symbol,
                             "Setup": f"FTFC {direction}",
-                            "Price": f"${curr['Close']:.2f}",
+                            "Price": f"${c_close:.2f}" if c_close is not None else "",
                             "Date": df.index[-1].strftime("%Y-%m-%d")
                         })
 
-            # métricas/progresso
+            # métricas / progresso
             progress = (i + 1) / total
             progress_bar.progress(progress)
             processed_metric.metric("Processados", f"{i+1}")
             found_metric.metric("Setups", f"{len(results)}")
             progress_metric.metric("Progresso", f"{progress*100:.1f}%")
-            time.sleep(0.03)
+            time.sleep(0.02)
 
         status.text("Scanner concluído!")
 
@@ -278,12 +327,17 @@ def main():
             df_results = df_results[cols]
 
             st.markdown("Resultados")
-            render_colored_table(df_results.drop(columns=["Bias Badge"]).assign(**{"Bias": df_results["Bias Badge"]}))
+            render_colored_table(
+                df_results.drop(columns=["Bias Badge"]).assign(**{"Bias": df_results["Bias Badge"]})
+            )
 
             csv = df_results.drop(columns=["Bias Badge"]).to_csv(index=False)
-            st.download_button("Baixar CSV", csv,
-                               file_name=f"strat_results_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
-                               mime="text/csv")
+            st.download_button(
+                "Baixar CSV",
+                csv,
+                file_name=f"strat_results_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
+                mime="text/csv"
+            )
         else:
             st.warning("Nenhum setup encontrado.")
 
