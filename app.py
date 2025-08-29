@@ -22,29 +22,22 @@ st.markdown("""
 html, body, [class*="css"] {
     font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
 }
-table, th, td {
-    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
-    border: none !important;
-    outline: none !important;
-}
 table {
     width: 100% !important;
-    table-layout: fixed !important;
     border-collapse: collapse !important;
+}
+th, td {
+    text-align: center !important;
+    padding: 8px !important;
+    font-size: 15px !important;
 }
 th {
     background-color: #2a323b !important;
     color: white !important;
-    font-size: 18px !important;
     font-weight: bold !important;
-    text-align: center !important;
-    padding: 10px !important;
-}
-td {
-    font-size: 16px !important;
-    text-align: center !important;
-    color: #eee !important;
-    padding: 8px !important;
+    position: sticky;
+    top: 0;
+    z-index: 2;
 }
 tr:nth-child(odd) { background-color: #15191f !important; }
 tr:nth-child(even) { background-color: #1b1f24 !important; }
@@ -65,7 +58,6 @@ worksheet = client.open_by_key(SHEET_ID).sheet1  # primeira aba
 # FUNÇÕES AUXILIARES
 # =========================
 def ensure_ohlc(df):
-    """Garante que o DataFrame só tenha colunas OHLC com nomes limpos"""
     if df is None or df.empty:
         return pd.DataFrame(columns=["Open","High","Low","Close"])
     df = df.copy()
@@ -78,37 +70,30 @@ def ensure_ohlc(df):
     return df
 
 def detect_strat(df):
-    """Detecta setups TheStrat na última vela"""
     if df is None or len(df) < 2:
         return None
-
     df = ensure_ohlc(df)
     if len(df) < 2:
         return None
-
     c, p = df.iloc[-1], df.iloc[-2]
-
     try:
         c_high, c_low = float(c["High"]), float(c["Low"])
         p_high, p_low = float(p["High"]), float(p["Low"])
     except Exception:
         return None
-
     if c_high < p_high and c_low > p_low:
-        return "1"   # Inside bar
+        return "1"
     elif c_high > p_high and c_low >= p_low:
-        return "2u"  # Two Up
+        return "2u"
     elif c_low < p_low and c_high <= p_high:
-        return "2d"  # Two Down
+        return "2d"
     elif c_high > p_high and c_low < p_low:
-        return "3"   # Outside
+        return "3"
     return ""
 
 def calc_atr(df, period=14):
-    """Calcula ATR"""
     df = ensure_ohlc(df)
-    if df.empty: 
-        return None
+    if df.empty: return None
     df["H-L"] = df["High"] - df["Low"]
     df["H-C"] = abs(df["High"] - df["Close"].shift())
     df["L-C"] = abs(df["Low"] - df["Close"].shift())
@@ -125,16 +110,10 @@ def load_symbols():
     return df["Symbol"].dropna().unique().tolist()
 
 def color_setup(value):
-    mapping = {
-        "1": "#FFD700",   # amarelo
-        "2u": "#00FF00",  # verde
-        "2d": "#FF4500",  # vermelho
-        "3": "#1E90FF"    # azul
-    }
+    mapping = {"1": "#FFD700", "2u": "#00FF00", "2d": "#FF4500", "3": "#1E90FF"}
     return mapping.get(str(value), "#eee")
 
 def resample_safe(df, rule):
-    """Resample garantido para sempre retornar DataFrame"""
     if df is None or df.empty:
         return pd.DataFrame(columns=["Open","High","Low","Close"])
     grouped = df.resample(rule).apply({
@@ -151,42 +130,44 @@ def resample_safe(df, rule):
 # MAIN APP
 # =========================
 def main():
-    st.markdown('<h4 style="text-align:left; font-size:1.2rem; margin-bottom:1rem; color: #ccc;">Scanner TheStrat</h4>', unsafe_allow_html=True)
+    # --- título + dropdown lado a lado ---
+    col_title, col_select = st.columns([4,1])
+    with col_title:
+        st.markdown('<h4 style="text-align:left; font-size:1.3rem; color: #ccc;">Scanner TheStrat</h4>', unsafe_allow_html=True)
+    with col_select:
+        max_symbols = st.selectbox(
+            "Qtd símbolos",
+            [50, 100, 200, 300, 350, 450, 500, 650, 700, 750],
+            index=0
+        )
 
     symbols = load_symbols()
-    st.info(f"Analisando {len(symbols)} símbolos da planilha")
+    st.info(f"Analisando {min(max_symbols, len(symbols))} de {len(symbols)} símbolos")
 
     results = []
-
-    for sym in symbols[:50]:
+    for sym in symbols[:max_symbols]:
         try:
             data_day = ensure_ohlc(yf.download(sym, period="6mo", interval="1d", progress=False))
             data_wk  = ensure_ohlc(yf.download(sym, period="1y", interval="1wk", progress=False))
             data_mo  = ensure_ohlc(yf.download(sym, period="5y", interval="1mo", progress=False))
-
             if data_day.empty or data_wk.empty or data_mo.empty:
                 continue
 
             setup_day = detect_strat(data_day)
             setup_wk = detect_strat(data_wk)
             setup_mo = detect_strat(data_mo)
-
-            # Quarter
-            data_qtr = resample_safe(data_mo, "Q")
-            setup_qtr = detect_strat(data_qtr)
-
-            # Year
-            data_yr = resample_safe(data_mo, "Y")
-            setup_yr = detect_strat(data_yr)
+            setup_qtr = detect_strat(resample_safe(data_mo, "Q"))
+            setup_yr  = detect_strat(resample_safe(data_mo, "Y"))
 
             last_price = float(data_day["Close"].iloc[-1])
-            net_chg = last_price - float(data_day["Close"].iloc[-2])
+            open_price = float(data_day["Open"].iloc[-1])
+            change_pct = ((last_price - open_price) / open_price) * 100
             atr = calc_atr(data_day)
 
             results.append({
                 "Symbol": sym,
                 "Last": round(last_price, 2),
-                "Net Chng": round(net_chg, 2),
+                "Change %": f"{change_pct:.2f}%",
                 "Day": setup_day,
                 "Wk": setup_wk,
                 "Month": setup_mo,
@@ -199,10 +180,8 @@ def main():
 
     if results:
         df_results = pd.DataFrame(results)
-
-        html_table = "<table>"
-        html_table += "<tr>" + "".join(f"<th>{col}</th>" for col in df_results.columns) + "</tr>"
-
+        html_table = "<table><thead><tr>"
+        html_table += "".join(f"<th>{col}</th>" for col in df_results.columns) + "</tr></thead><tbody>"
         for _, row in df_results.iterrows():
             html_table += "<tr>"
             for col in df_results.columns:
@@ -212,8 +191,7 @@ def main():
                     color = color_setup(value)
                 html_table += f"<td style='color:{color}'>{value}</td>"
             html_table += "</tr>"
-
-        html_table += "</table>"
+        html_table += "</tbody></table>"
         st.markdown(html_table, unsafe_allow_html=True)
 
 if __name__ == "__main__":
