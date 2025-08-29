@@ -101,7 +101,7 @@ def get_stock_data(symbol, period="1y", interval="1d"):
     except:
         return None
 
-# 🔹 NOVO: carregar símbolos do GitHub
+# 🔹 Carregar símbolos do GitHub
 @st.cache_data(ttl=3600)
 def load_symbols_from_github():
     url = "https://raw.githubusercontent.com/Bastaocchi/stock-scanner-app/main/symbols.csv"
@@ -130,11 +130,22 @@ def main():
 
     # Carregar lista de símbolos do GitHub
     df_symbols = load_symbols_from_github()
+    df_symbols.columns = df_symbols.columns.str.strip().str.lower()  # normaliza cabeçalhos
+
     st.info(f"✅ Carregados {len(df_symbols)} símbolos do GitHub")
+
+    # Determinar qual coluna usar
+    if "symbols" in df_symbols.columns:
+        SYMBOLS = df_symbols["symbols"].dropna().tolist()
+    elif "symbol" in df_symbols.columns:
+        SYMBOLS = df_symbols["symbol"].dropna().tolist()
+    else:
+        st.error("❌ O CSV precisa ter uma coluna chamada 'symbols' ou 'symbol'")
+        return
 
     if st.button("🚀 Rodar Scanner"):
         results = []
-        for symbol in df_symbols["symbol"].tolist():
+        for symbol in SYMBOLS:
             df = get_stock_data(symbol)
             if df is not None and len(df) >= 3:
                 found, info = detect_inside_bar(df)
