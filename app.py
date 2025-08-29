@@ -3,7 +3,6 @@ import pandas as pd
 import yfinance as yf
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
-import numpy as np
 
 # =========================
 # CONFIGURAÇÃO DA PÁGINA
@@ -65,14 +64,22 @@ worksheet = client.open_by_key(SHEET_ID).sheet1  # primeira aba
 # =========================
 # FUNÇÕES AUXILIARES
 # =========================
+def ensure_ohlc(df):
+    """Garante que o DataFrame só tenha colunas OHLC com nomes limpos"""
+    if df is None or df.empty:
+        return pd.DataFrame(columns=["Open","High","Low","Close"])
+    df = df.copy()
+    if isinstance(df.columns, pd.MultiIndex):
+        df.columns = [c[0] for c in df.columns]
+    keep_cols = [c for c in ["Open","High","Low","Close"] if c in df.columns]
+    return df[keep_cols]
+
 def detect_strat(df):
     """Detecta setups TheStrat na última vela"""
     if len(df) < 2:
         return None
     
     c, p = df.iloc[-1], df.iloc[-2]
-
-    # Forçar valores para float
     c_high, c_low = float(c["High"]), float(c["Low"])
     p_high, p_low = float(p["High"]), float(p["Low"])
 
@@ -104,12 +111,11 @@ def load_symbols():
     return df["Symbol"].dropna().unique().tolist()
 
 def color_setup(value):
-    """Define cores para setups"""
     mapping = {
-        "1": "#FFD700",   # Amarelo
-        "2u": "#00FF00",  # Verde
-        "2d": "#FF4500",  # Vermelho
-        "3": "#1E90FF"    # Azul claro
+        "1": "#FFD700",   # amarelo
+        "2u": "#00FF00",  # verde
+        "2d": "#FF4500",  # vermelho
+        "3": "#1E90FF"    # azul
     }
     return mapping.get(str(value), "#eee")
 
@@ -124,34 +130,31 @@ def main():
 
     results = []
 
-    for sym in symbols[:50]:  # limite inicial para não travar
+    for sym in symbols[:50]:
         try:
-            data_day = yf.download(sym, period="6mo", interval="1d", progress=False)
-            data_wk = yf.download(sym, period="1y", interval="1wk", progress=False)
-            data_mo = yf.download(sym, period="5y", interval="1mo", progress=False)
+            data_day = ensure_ohlc(yf.download(sym, period="6mo", interval="1d", progress=False))
+            data_wk  = ensure_ohlc(yf.download(sym, period="1y", interval="1wk", progress=False))
+            data_mo  = ensure_ohlc(yf.download(sym, period="5y", interval="1mo", progress=False))
 
             if data_day.empty or data_wk.empty or data_mo.empty:
                 continue
-
-            # Garantir que só pegamos OHLC
-            data_day = data_day[["Open","High","Low","Close"]].copy()
-            data_wk = data_wk[["Open","High","Low","Close"]].copy()
-            data_mo = data_mo[["Open","High","Low","Close"]].copy()
 
             setup_day = detect_strat(data_day)
             setup_wk = detect_strat(data_wk)
             setup_mo = detect_strat(data_mo)
 
-            # Qtr = 3 meses
+            # Qtr
             data_qtr = data_mo.resample("Q").agg({
                 "Open":"first","High":"max","Low":"min","Close":"last"
             })
+            data_qtr = ensure_ohlc(data_qtr)
             setup_qtr = detect_strat(data_qtr)
 
             # Year
             data_yr = data_mo.resample("Y").agg({
                 "Open":"first","High":"max","Low":"min","Close":"last"
             })
+            data_yr = ensure_ohlc(data_yr)
             setup_yr = detect_strat(data_yr)
 
             last_price = float(data_day["Close"].iloc[-1])
@@ -175,7 +178,6 @@ def main():
     if results:
         df_results = pd.DataFrame(results)
 
-        # Renderizar tabela estilizada
         html_table = "<table>"
         html_table += "<tr>" + "".join(f"<th>{col}</th>" for col in df_results.columns) + "</tr>"
 
