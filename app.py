@@ -174,10 +174,12 @@ def main():
                     "Day%": f"{info['day_change']:.2f}%"
                 })
 
-            # Atualizar progresso
+            # Atualizar progresso + setups
             progress = (i + 1) / len(SYMBOLS)
             progress_bar.progress(progress)
-            status_text.text(f"⏳ Processando {i+1}/{len(SYMBOLS)} símbolos...")
+            status_text.text(
+                f"⏳ Processando {i+1}/{len(SYMBOLS)} símbolos... | 🎯 {len(results)} setups encontrados"
+            )
 
         # Limpar barra no final
         progress_bar.empty()
