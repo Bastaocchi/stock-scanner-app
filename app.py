@@ -1,7 +1,6 @@
 import streamlit as st
 import yfinance as yf
 import pandas as pd
-from datetime import datetime
 
 # =========================
 # CONFIGURAÇÃO DA PÁGINA
@@ -50,7 +49,7 @@ th:nth-child(1), td:nth-child(1) { width: 120px !important; }
 th:nth-child(2), td:nth-child(2) { width: 200px !important; }
 th:nth-child(3), td:nth-child(3) { width: 150px !important; }
 th:nth-child(4), td:nth-child(4) { width: 150px !important; }
-th:nth-child(5), td:nth-child(5) { width: 200px !important; }
+th:nth-child(5), td:nth-child(5) { width: 150px !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -62,12 +61,11 @@ def detect_inside_bar(df):
         return False, None
     current, previous = df.iloc[-1], df.iloc[-2]
     if current["High"] < previous["High"] and current["Low"] > previous["Low"]:
-        change_pct = ((current["Close"] - current["Open"]) / current["Open"]) * 100
         return True, {
             "type": "Inside Bar",
             "price": current["Close"],
-            "change_pct": change_pct,
-            "date": current.name.strftime("%Y-%m-%d")
+            "setup_change": ((current["Close"] - current["Open"]) / current["Open"]) * 100,
+            "day_change": ((current["Close"] - current["Open"]) / current["Open"]) * 100
         }
     return False, None
 
@@ -84,12 +82,13 @@ def detect_hammer_setup(df):
     is_short_upper_shadow = upper_shadow <= body_size
     broke_below = current["Low"] < previous["Low"]
     closed_green = current["Close"] > current["Open"]
+
     if is_small_body and is_long_lower_shadow and is_short_upper_shadow and broke_below and closed_green:
         return True, {
             "type": "Hammer Setup",
             "price": current["Close"],
-            "change_pct": ((current["Close"] - current["Low"]) / current["Low"]) * 100,
-            "date": current.name.strftime("%Y-%m-%d")
+            "setup_change": ((current["Close"] - current["Low"]) / current["Low"]) * 100,
+            "day_change": ((current["Close"] - current["Open"]) / current["Open"]) * 100
         }
     return False, None
 
@@ -130,11 +129,10 @@ def main():
 
     # Carregar lista de símbolos do GitHub
     df_symbols = load_symbols_from_github()
-    df_symbols.columns = df_symbols.columns.str.strip().str.lower()  # normaliza cabeçalhos
+    df_symbols.columns = df_symbols.columns.str.strip().str.lower()
 
     st.info(f"✅ Carregados {len(df_symbols)} símbolos do GitHub")
 
-    # Determinar qual coluna usar
     if "symbols" in df_symbols.columns:
         SYMBOLS = df_symbols["symbols"].dropna().tolist()
     elif "symbol" in df_symbols.columns:
@@ -146,27 +144,34 @@ def main():
     if st.button("🚀 Rodar Scanner"):
         results = []
         for symbol in SYMBOLS:
+            st.write(f"🔍 Analisando {symbol}...")
             df = get_stock_data(symbol)
-            if df is not None and len(df) >= 3:
-                found, info = detect_inside_bar(df)
-                if found: 
-                    results.append({
-                        "Symbol": symbol,
-                        "Setup": info["type"],
-                        "Price": f"${info['price']:.2f}",
-                        "Change%": f"{info['change_pct']:.2f}%",
-                        "Date": info["date"]
-                    })
-                else:
-                    found, info = detect_hammer_setup(df)
-                    if found:
-                        results.append({
-                            "Symbol": symbol,
-                            "Setup": info["type"],
-                            "Price": f"${info['price']:.2f}",
-                            "Change%": f"{info['change_pct']:.2f}%",
-                            "Date": info["date"]
-                        })
+            if df is None or len(df) < 3:
+                st.warning(f"⚠️ Sem dados suficientes para {symbol}")
+                continue
+
+            found, info = detect_inside_bar(df)
+            if found:
+                st.success(f"✅ {symbol} → Inside Bar")
+                results.append({
+                    "Symbol": symbol,
+                    "Setup": info["type"],
+                    "Price": f"${info['price']:.2f}",
+                    "Change%": f"{info['setup_change']:.2f}%",
+                    "Day%": f"{info['day_change']:.2f}%"
+                })
+                continue
+
+            found, info = detect_hammer_setup(df)
+            if found:
+                st.success(f"✅ {symbol} → Hammer Setup")
+                results.append({
+                    "Symbol": symbol,
+                    "Setup": info["type"],
+                    "Price": f"${info['price']:.2f}",
+                    "Change%": f"{info['setup_change']:.2f}%",
+                    "Day%": f"{info['day_change']:.2f}%"
+                })
 
         if results:
             df_results = pd.DataFrame(results)
