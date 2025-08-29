@@ -71,13 +71,18 @@ def detect_strat(df):
         return None
     
     c, p = df.iloc[-1], df.iloc[-2]
-    if c["High"] < p["High"] and c["Low"] > p["Low"]:
+
+    # Forçar valores para float para evitar erro "truth value ambiguous"
+    c_high, c_low = float(c["High"]), float(c["Low"])
+    p_high, p_low = float(p["High"]), float(p["Low"])
+
+    if c_high < p_high and c_low > p_low:
         return "1"   # Inside bar
-    elif c["High"] > p["High"] and c["Low"] >= p["Low"]:
+    elif c_high > p_high and c_low >= p_low:
         return "2u"  # Two Up
-    elif c["Low"] < p["Low"] and c["High"] <= p["High"]:
+    elif c_low < p_low and c_high <= p_high:
         return "2d"  # Two Down
-    elif c["High"] > p["High"] and c["Low"] < p["Low"]:
+    elif c_high > p_high and c_low < p_low:
         return "3"   # Outside
     return ""
 
@@ -98,6 +103,16 @@ def load_symbols():
         return []
     return df["Symbol"].dropna().unique().tolist()
 
+def color_setup(value):
+    """Define cores para setups"""
+    mapping = {
+        "1": "#FFD700",   # Amarelo
+        "2u": "#00FF00",  # Verde
+        "2d": "#FF4500",  # Vermelho
+        "3": "#1E90FF"    # Azul claro
+    }
+    return mapping.get(str(value), "#eee")
+
 # =========================
 # MAIN APP
 # =========================
@@ -109,7 +124,7 @@ def main():
 
     results = []
 
-    for sym in symbols[:50]:  # limite inicial p/ não travar
+    for sym in symbols[:50]:  # limite inicial
         try:
             data_day = yf.download(sym, period="6mo", interval="1d", progress=False)
             data_wk = yf.download(sym, period="1y", interval="1wk", progress=False)
@@ -122,7 +137,7 @@ def main():
             setup_wk = detect_strat(data_wk)
             setup_mo = detect_strat(data_mo)
 
-            # Qtr = agrupando meses de 3 em 3
+            # Qtr = 3 meses
             data_qtr = data_mo.resample("Q").agg({"Open":"first","High":"max","Low":"min","Close":"last"})
             setup_qtr = detect_strat(data_qtr)
 
@@ -130,8 +145,8 @@ def main():
             data_yr = data_mo.resample("Y").agg({"Open":"first","High":"max","Low":"min","Close":"last"})
             setup_yr = detect_strat(data_yr)
 
-            last_price = data_day["Close"].iloc[-1]
-            net_chg = last_price - data_day["Close"].iloc[-2]
+            last_price = float(data_day["Close"].iloc[-1])
+            net_chg = last_price - float(data_day["Close"].iloc[-2])
             atr = calc_atr(data_day)
 
             results.append({
@@ -160,8 +175,8 @@ def main():
             for col in df_results.columns:
                 value = row[col]
                 color = "#eee"
-                if str(value).lower() in ["1", "2u", "2d", "3"]:
-                    color = "#00ff00"  # setups em verde
+                if col in ["Day", "Wk", "Month", "Qtr", "Year"]:
+                    color = color_setup(value)
                 html_table += f"<td style='color:{color}'>{value}</td>"
             html_table += "</tr>"
 
