@@ -144,15 +144,12 @@ def main():
     if st.button("🚀 Rodar Scanner"):
         results = []
         for symbol in SYMBOLS:
-            st.write(f"🔍 Analisando {symbol}...")
             df = get_stock_data(symbol)
             if df is None or len(df) < 3:
-                st.warning(f"⚠️ Sem dados suficientes para {symbol}")
                 continue
 
             found, info = detect_inside_bar(df)
             if found:
-                st.success(f"✅ {symbol} → Inside Bar")
                 results.append({
                     "Symbol": symbol,
                     "Setup": info["type"],
@@ -164,7 +161,6 @@ def main():
 
             found, info = detect_hammer_setup(df)
             if found:
-                st.success(f"✅ {symbol} → Hammer Setup")
                 results.append({
                     "Symbol": symbol,
                     "Setup": info["type"],
