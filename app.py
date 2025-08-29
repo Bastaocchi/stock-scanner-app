@@ -72,7 +72,7 @@ def detect_strat(df):
     
     c, p = df.iloc[-1], df.iloc[-2]
 
-    # Forçar valores para float para evitar erro "truth value ambiguous"
+    # Forçar valores para float
     c_high, c_low = float(c["High"]), float(c["Low"])
     p_high, p_low = float(p["High"]), float(p["Low"])
 
@@ -124,7 +124,7 @@ def main():
 
     results = []
 
-    for sym in symbols[:50]:  # limite inicial
+    for sym in symbols[:50]:  # limite inicial para não travar
         try:
             data_day = yf.download(sym, period="6mo", interval="1d", progress=False)
             data_wk = yf.download(sym, period="1y", interval="1wk", progress=False)
@@ -133,16 +133,25 @@ def main():
             if data_day.empty or data_wk.empty or data_mo.empty:
                 continue
 
+            # Garantir que só pegamos OHLC
+            data_day = data_day[["Open","High","Low","Close"]].copy()
+            data_wk = data_wk[["Open","High","Low","Close"]].copy()
+            data_mo = data_mo[["Open","High","Low","Close"]].copy()
+
             setup_day = detect_strat(data_day)
             setup_wk = detect_strat(data_wk)
             setup_mo = detect_strat(data_mo)
 
             # Qtr = 3 meses
-            data_qtr = data_mo.resample("Q").agg({"Open":"first","High":"max","Low":"min","Close":"last"})
+            data_qtr = data_mo.resample("Q").agg({
+                "Open":"first","High":"max","Low":"min","Close":"last"
+            })
             setup_qtr = detect_strat(data_qtr)
 
             # Year
-            data_yr = data_mo.resample("Y").agg({"Open":"first","High":"max","Low":"min","Close":"last"})
+            data_yr = data_mo.resample("Y").agg({
+                "Open":"first","High":"max","Low":"min","Close":"last"
+            })
             setup_yr = detect_strat(data_yr)
 
             last_price = float(data_day["Close"].iloc[-1])
