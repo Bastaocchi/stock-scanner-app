@@ -2,7 +2,6 @@ import streamlit as st
 import yfinance as yf
 import pandas as pd
 from datetime import datetime
-import time
 
 # =========================
 # CONFIGURAÇÃO DA PÁGINA
@@ -14,7 +13,7 @@ st.set_page_config(
 )
 
 # =========================
-# CSS GLOBAL (do Gerenciador)
+# CSS GLOBAL (Gerenciador)
 # =========================
 st.markdown("""
 <style>
@@ -47,7 +46,7 @@ td {
 }
 tr:nth-child(odd) { background-color: #15191f !important; }
 tr:nth-child(even) { background-color: #1b1f24 !important; }
-th:nth-child(1), td:nth-child(1) { width: 150px !important; }
+th:nth-child(1), td:nth-child(1) { width: 120px !important; }
 th:nth-child(2), td:nth-child(2) { width: 200px !important; }
 th:nth-child(3), td:nth-child(3) { width: 150px !important; }
 th:nth-child(4), td:nth-child(4) { width: 150px !important; }
@@ -102,11 +101,16 @@ def get_stock_data(symbol, period="1y", interval="1d"):
     except:
         return None
 
+@st.cache_data(ttl=3600)
+def load_symbols_from_github():
+    # 🔹 Substitua pelo link RAW do seu CSV no GitHub
+    url = "https://raw.githubusercontent.com/SEU_USUARIO/SEU_REPO/main/symbols.csv"
+    df = pd.read_csv(url)
+    return df
+
 def render_results_table(df):
     html_table = "<table style='width:100%; border-collapse: collapse;'>"
-    html_table += "<tr>" + "".join(
-        f"<th>{col}</th>" for col in df.columns
-    ) + "</tr>"
+    html_table += "<tr>" + "".join(f"<th>{col}</th>" for col in df.columns) + "</tr>"
     for idx, row in df.iterrows():
         bg_color = "#15191f" if idx % 2 == 0 else "#1b1f24"
         html_table += f"<tr style='background-color:{bg_color};'>"
@@ -124,20 +128,37 @@ def render_results_table(df):
 def main():
     st.markdown('<h2 style="color:#ccc;">🎯 Scanner de Setups (Estilo Gerenciador)</h2>', unsafe_allow_html=True)
 
-    SYMBOLS = ["AAPL","MSFT","TSLA","NVDA","AMZN"]  # exemplo pequeno
+    df_symbols = load_symbols_from_github()
+    st.info(f"Carregados {len(df_symbols)} símbolos do GitHub")
 
     if st.button("🚀 Rodar Scanner"):
         results = []
-        for symbol in SYMBOLS:
+        for symbol in df_symbols["symbol"].tolist():
             df = get_stock_data(symbol)
             if df is not None and len(df) >= 3:
                 found, info = detect_inside_bar(df)
                 if found: 
-                    results.append({"Symbol": symbol, "Setup": info["type"], "Price": f"${info['price']:.2f}", "Change%": f"{info['change_pct']:.2f}%", "Date": info["date"]})
+                    results.append({
+                        "Symbol": symbol,
+                        "Setup": info["type"],
+                        "Price": f"${info['price']:.2f}",
+                        "Change%": f"{info['change_pct']:.2f}%",
+                        "Date": info["date"],
+                        "Sector": df_symbols.loc[df_symbols["symbol"] == symbol, "sector"].values[0],
+                        "Industry": df_symbols.loc[df_symbols["symbol"] == symbol, "industry"].values[0]
+                    })
                 else:
                     found, info = detect_hammer_setup(df)
                     if found:
-                        results.append({"Symbol": symbol, "Setup": info["type"], "Price": f"${info['price']:.2f}", "Change%": f"{info['change_pct']:.2f}%", "Date": info["date"]})
+                        results.append({
+                            "Symbol": symbol,
+                            "Setup": info["type"],
+                            "Price": f"${info['price']:.2f}",
+                            "Change%": f"{info['change_pct']:.2f}%",
+                            "Date": info["date"],
+                            "Sector": df_symbols.loc[df_symbols["symbol"] == symbol, "sector"].values[0],
+                            "Industry": df_symbols.loc[df_symbols["symbol"] == symbol, "industry"].values[0]
+                        })
 
         if results:
             df_results = pd.DataFrame(results)
