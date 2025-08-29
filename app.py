@@ -60,36 +60,53 @@ th:nth-child(5), td:nth-child(5) { width: 150px !important; }
 def detect_inside_bar(df):
     if len(df) < 2:
         return False, None
-    current, previous = df.iloc[-1], df.iloc[-2]
-    if current["High"] < previous["High"] and current["Low"] > previous["Low"]:
+
+    current = df.iloc[-1]
+    previous = df.iloc[-2]
+
+    high_curr, low_curr = float(current["High"]), float(current["Low"])
+    high_prev, low_prev = float(previous["High"]), float(previous["Low"])
+    open_curr, close_curr = float(current["Open"]), float(current["Close"])
+
+    if high_curr < high_prev and low_curr > low_prev:
         return True, {
             "type": "Inside Bar",
-            "price": current["Close"],
-            "day_change": ((current["Close"] - current["Open"]) / current["Open"]) * 100
+            "price": close_curr,
+            "day_change": ((close_curr - open_curr) / open_curr) * 100
         }
     return False, None
+
 
 def detect_hammer_setup(df):
     if len(df) < 3:
         return False, None
-    current, previous = df.iloc[-1], df.iloc[-2]
-    body_size = abs(current["Close"] - current["Open"])
-    total_range = current["High"] - current["Low"]
-    lower_shadow = min(current["Open"], current["Close"]) - current["Low"]
-    upper_shadow = current["High"] - max(current["Open"], current["Close"])
+
+    current = df.iloc[-1]
+    previous = df.iloc[-2]
+
+    open_curr, close_curr = float(current["Open"]), float(current["Close"])
+    high_curr, low_curr = float(current["High"]), float(current["Low"])
+    low_prev = float(previous["Low"])
+
+    body_size = abs(close_curr - open_curr)
+    total_range = high_curr - low_curr
+    lower_shadow = min(open_curr, close_curr) - low_curr
+    upper_shadow = high_curr - max(open_curr, close_curr)
+
     is_small_body = body_size <= 0.4 * total_range
     is_long_lower_shadow = lower_shadow >= 2 * body_size
     is_short_upper_shadow = upper_shadow <= body_size
-    broke_below = current["Low"] < previous["Low"]
-    closed_green = current["Close"] > current["Open"]
+    broke_below = low_curr < low_prev
+    closed_green = close_curr > open_curr
 
     if is_small_body and is_long_lower_shadow and is_short_upper_shadow and broke_below and closed_green:
         return True, {
             "type": "Hammer Setup",
-            "price": current["Close"],
-            "day_change": ((current["Close"] - current["Open"]) / current["Open"]) * 100
+            "price": close_curr,
+            "day_change": ((close_curr - open_curr) / open_curr) * 100
         }
     return False, None
+
 
 @st.cache_data(ttl=3600)
 def get_stock_data(symbol, period="1y", interval="1d"):
@@ -98,11 +115,12 @@ def get_stock_data(symbol, period="1y", interval="1d"):
             symbol,
             period=period,
             interval=interval,
-            auto_adjust=False   # 🔹 garante OHLC real, sem ajuste
+            auto_adjust=False   # 🔹 OHLC real, sem ajuste
         )
         return df if not df.empty else None
     except:
         return None
+
 
 # 🔹 Carregar símbolos do GitHub
 @st.cache_data(ttl=3600)
@@ -110,6 +128,7 @@ def load_symbols_from_github():
     url = "https://raw.githubusercontent.com/Bastaocchi/stock-scanner-app/main/symbols.csv"
     df = pd.read_csv(url)
     return df
+
 
 def render_results_table(df):
     html_table = "<table style='width:100%; border-collapse: collapse;'>"
@@ -124,6 +143,7 @@ def render_results_table(df):
         html_table += "</tr>"
     html_table += "</table>"
     st.markdown(html_table, unsafe_allow_html=True)
+
 
 # =========================
 # MAIN
@@ -193,6 +213,7 @@ def main():
             render_results_table(df_results)
         else:
             st.warning("❌ Nenhum setup encontrado.")
+
 
 if __name__ == "__main__":
     main()
