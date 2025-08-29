@@ -101,10 +101,10 @@ def get_stock_data(symbol, period="1y", interval="1d"):
     except:
         return None
 
+# 🔹 NOVO: carregar símbolos do GitHub
 @st.cache_data(ttl=3600)
 def load_symbols_from_github():
-    # 🔹 Substitua pelo link RAW do seu CSV no GitHub
-    url = "https://raw.githubusercontent.com/SEU_USUARIO/SEU_REPO/main/symbols.csv"
+    url = "https://raw.githubusercontent.com/Bastaocchi/stock-scanner-app/main/symbols.csv"
     df = pd.read_csv(url)
     return df
 
@@ -128,8 +128,9 @@ def render_results_table(df):
 def main():
     st.markdown('<h2 style="color:#ccc;">🎯 Scanner de Setups (Estilo Gerenciador)</h2>', unsafe_allow_html=True)
 
+    # Carregar lista de símbolos do GitHub
     df_symbols = load_symbols_from_github()
-    st.info(f"Carregados {len(df_symbols)} símbolos do GitHub")
+    st.info(f"✅ Carregados {len(df_symbols)} símbolos do GitHub")
 
     if st.button("🚀 Rodar Scanner"):
         results = []
@@ -143,9 +144,7 @@ def main():
                         "Setup": info["type"],
                         "Price": f"${info['price']:.2f}",
                         "Change%": f"{info['change_pct']:.2f}%",
-                        "Date": info["date"],
-                        "Sector": df_symbols.loc[df_symbols["symbol"] == symbol, "sector"].values[0],
-                        "Industry": df_symbols.loc[df_symbols["symbol"] == symbol, "industry"].values[0]
+                        "Date": info["date"]
                     })
                 else:
                     found, info = detect_hammer_setup(df)
@@ -155,9 +154,7 @@ def main():
                             "Setup": info["type"],
                             "Price": f"${info['price']:.2f}",
                             "Change%": f"{info['change_pct']:.2f}%",
-                            "Date": info["date"],
-                            "Sector": df_symbols.loc[df_symbols["symbol"] == symbol, "sector"].values[0],
-                            "Industry": df_symbols.loc[df_symbols["symbol"] == symbol, "industry"].values[0]
+                            "Date": info["date"]
                         })
 
         if results:
