@@ -133,6 +133,20 @@ def color_setup(value):
     }
     return mapping.get(str(value), "#eee")
 
+def resample_safe(df, rule):
+    """Resample garantido para sempre retornar DataFrame"""
+    if df is None or df.empty:
+        return pd.DataFrame(columns=["Open","High","Low","Close"])
+    grouped = df.resample(rule).apply({
+        "Open": lambda x: x.iloc[0],
+        "High": max,
+        "Low": min,
+        "Close": lambda x: x.iloc[-1]
+    })
+    if isinstance(grouped, pd.Series):
+        grouped = grouped.to_frame().T
+    return ensure_ohlc(grouped)
+
 # =========================
 # MAIN APP
 # =========================
@@ -157,22 +171,12 @@ def main():
             setup_wk = detect_strat(data_wk)
             setup_mo = detect_strat(data_mo)
 
-            # Qtr
-            data_qtr = data_mo.resample("Q").agg({
-                "Open": lambda x: x.iloc[0],
-                "High": "max",
-                "Low": "min",
-                "Close": lambda x: x.iloc[-1]
-            })
+            # Quarter
+            data_qtr = resample_safe(data_mo, "Q")
             setup_qtr = detect_strat(data_qtr)
 
             # Year
-            data_yr = data_mo.resample("Y").agg({
-                "Open": lambda x: x.iloc[0],
-                "High": "max",
-                "Low": "min",
-                "Close": lambda x: x.iloc[-1]
-            })
+            data_yr = resample_safe(data_mo, "Y")
             setup_yr = detect_strat(data_yr)
 
             last_price = float(data_day["Close"].iloc[-1])
