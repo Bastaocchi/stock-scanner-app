@@ -58,6 +58,7 @@ worksheet = client.open_by_key(SHEET_ID).sheet1  # primeira aba
 # FUNÇÕES AUXILIARES
 # =========================
 def ensure_ohlc(df):
+    """Limpa e garante colunas OHLC"""
     if df is None or df.empty:
         return pd.DataFrame(columns=["Open","High","Low","Close"])
     df = df.copy()
@@ -70,30 +71,39 @@ def ensure_ohlc(df):
     return df
 
 def detect_strat(df):
+    """Detecta setups TheStrat na última vela"""
     if df is None or len(df) < 2:
         return None
+
     df = ensure_ohlc(df)
+    df = df[~df.index.duplicated(keep="last")].sort_index()
     if len(df) < 2:
         return None
-    c, p = df.iloc[-1], df.iloc[-2]
+
+    c = df.iloc[-1].copy()
+    p = df.iloc[-2].copy()
+
     try:
         c_high, c_low = float(c["High"]), float(c["Low"])
         p_high, p_low = float(p["High"]), float(p["Low"])
     except Exception:
         return None
+
     if c_high < p_high and c_low > p_low:
-        return "1"
+        return "1"   # Inside bar
     elif c_high > p_high and c_low >= p_low:
-        return "2u"
+        return "2u"  # Two Up
     elif c_low < p_low and c_high <= p_high:
-        return "2d"
+        return "2d"  # Two Down
     elif c_high > p_high and c_low < p_low:
-        return "3"
+        return "3"   # Outside
     return ""
 
 def calc_atr(df, period=14):
+    """Calcula ATR"""
     df = ensure_ohlc(df)
-    if df.empty: return None
+    if df.empty: 
+        return None
     df["H-L"] = df["High"] - df["Low"]
     df["H-C"] = abs(df["High"] - df["Close"].shift())
     df["L-C"] = abs(df["Low"] - df["Close"].shift())
@@ -102,6 +112,7 @@ def calc_atr(df, period=14):
     return atr.iloc[-1] if not atr.empty else None
 
 def load_symbols():
+    """Carrega lista de símbolos da planilha"""
     data = worksheet.get_all_records()
     df = pd.DataFrame(data)
     if "Symbol" not in df.columns:
@@ -114,6 +125,7 @@ def color_setup(value):
     return mapping.get(str(value), "#eee")
 
 def resample_safe(df, rule):
+    """Resample garantido para sempre retornar DataFrame"""
     if df is None or df.empty:
         return pd.DataFrame(columns=["Open","High","Low","Close"])
     grouped = df.resample(rule).apply({
@@ -124,6 +136,7 @@ def resample_safe(df, rule):
     })
     if isinstance(grouped, pd.Series):
         grouped = grouped.to_frame().T
+    grouped = grouped[~grouped.index.duplicated(keep="last")].sort_index()
     return ensure_ohlc(grouped)
 
 # =========================
