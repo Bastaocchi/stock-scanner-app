@@ -1,326 +1,172 @@
 import streamlit as st
-import yfinance as yf
 import pandas as pd
+import yfinance as yf
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
 import numpy as np
-from datetime import datetime, timedelta
-import time
 
-# Configuração da página
+# =========================
+# CONFIGURAÇÃO DA PÁGINA
+# =========================
 st.set_page_config(
-    page_title="Scanner de Setups Profissional",
+    page_title="Scanner TheStrat",
     page_icon="📊",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
 
-# CSS personalizado
+# =========================
+# CSS GLOBAL
+# =========================
 st.markdown("""
 <style>
-    .main-header {
-        font-size: 3rem;
-        font-weight: bold;
-        text-align: center;
-        margin-bottom: 2rem;
-        background: linear-gradient(90deg, #1e3c72, #2a5298);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-    }
-    .metric-card {
-        background: white;
-        padding: 1rem;
-        border-radius: 10px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        margin: 0.5rem 0;
-    }
-    .setup-found {
-        background: linear-gradient(45deg, #4CAF50, #45a049);
-        color: white;
-        padding: 0.5rem 1rem;
-        border-radius: 5px;
-        margin: 0.2rem;
-        display: inline-block;
-    }
+html, body, [class*="css"] {
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+}
+table, th, td {
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+    border: none !important;
+    outline: none !important;
+}
+table {
+    width: 100% !important;
+    table-layout: fixed !important;
+    border-collapse: collapse !important;
+}
+th {
+    background-color: #2a323b !important;
+    color: white !important;
+    font-size: 18px !important;
+    font-weight: bold !important;
+    text-align: center !important;
+    padding: 10px !important;
+}
+td {
+    font-size: 16px !important;
+    text-align: center !important;
+    color: #eee !important;
+    padding: 8px !important;
+}
+tr:nth-child(odd) { background-color: #15191f !important; }
+tr:nth-child(even) { background-color: #1b1f24 !important; }
 </style>
 """, unsafe_allow_html=True)
 
-# Lista de símbolos do seu arquivo CSV (seus 664 tickers exatos)
-SYMBOLS = ["A","AAL","AAPL","ABBV","ABNB","ABT","ACGL","ACN","ADBE","ADI","ADM","ADP","ADSK","AEE","AEP","AES","AFL","AFRM","AIG","AIZ","AJG","AKAM","ALB","ALGN","ALK","ALL","ALLE","AM","AMAT","AMCR","AMD","AME","AMGN","AMP","AMT","AMZN","ANET","AON","AOS","APA","APD","APH","APO","ARCC","ARE","ARTNA","ASML","ATO","AVB","AVGO","AVY","AWK","AXON","AXP","AZN","AZO","BA","BABA","BAC","BALL","BAX","BBDC","BBY","BDX","BE","BEN","BG","BIDU","BIIB","BILL","BIZD","BK","BKNG","BKR","BLDP","BLK","BMO","BMY","BNS","BP","BR","BRO","BSX","BX","BXP","BXSL","BYND","C","CAG","CAH","CAPL","CARR","CAT","CB","CBOE","CBRE","CCI","CCL","CCO","CDNS","CDW","CDZI","CEG","CF","CFG","CGBD","CHD","CHKP","CHRW","CHTR","CI","CINF","CL","CLX","CM","CMCSA","CME","CMG","CMI","CMS","CNC","CNI","CNP","CNQ","COF","COIN","COO","COP","COR","COST","CP","CPAY","CPB","CPRT","CPT","CRL","CRM","CRWD","CSCO","CSGP","CSIQ","CSX","CTAS","CTRA","CTSH","CTVA","CVLT","CVS","CVX","CWT","CYBR","CZR","D","DAL","DASH","DAY","DD","DDOG","DE","DECK","DELL","DG","DGX","DHI","DHR","DIS","DLR","DLTR","DMLP","DOC","DOCN","DOCU","DOL","DOV","DOW","DPZ","DQ","DRI","DTE","DUK","DVA","DVN","DXCM","EA","EBAY","ECL","ED","EFX","EG","EIX","EL","ELV","EME","EMN","EMR","ENB","ENPH","EOG","EPAM","EPD","EQIX","EQR","EQT","ERIE","ES","ESS","ESTC","ET","ETN","ETR","EVRG","EW","EXC","EXE","EXPD","EXPE","EXR","F","FANG","FAST","FCEL","FCX","FDS","FDX","FE","FFIV","FI","FICO","FIS","FITB","FLEX","FNF","FNV","FOUR","FOX","FOXA","FROG","FRT","FSK","FSLR","FTNT","FTV","GAIN","GBDC","GD","GDDY","GDOT","GE","GEHC","GEL","GEN","GEV","GILD","GIS","GL","GLW","GM","GNRC","GOOG","GOOGL","GPC","GPN","GRMN","GS","GSBD","GSK","GWRE","GWRS","GWW","HAL","HAS","HBAN","HCA","HD","HESM","HIG","HII","HLT","HOLX","HON","HOOD","HPE","HPQ","HRL","HSIC","HST","HSY","HTGC","HUBB","HUM","HWM","HYLN","IBKR","IBM","ICE","IDXX","IESC","IEX","IFF","INCY","INTC","INTU","INVH","IP","IPG","IQV","IR","IRM","ISRG","IT","ITW","IVZ","J","JBHT","JBL","JBLU","JCI","JD","JKHY","JKS","JNJ","JPM","K","KDP","KEY","KEYS","KHC","KIM","KKR","KLAC","KMB","KMI","KMX","KNTK","KO","KR","KVUE","L","LCID","LDOS","LEN","LH","LHX","LI","LII","LIN","LKQ","LLY","LMT","LNT","LOW","LRCX","LULU","LUV","LVS","LW","LYB","LYV","MA","MAA","MAIN","MAR","MAXN","MCD","MCHP","MCK","MCO","MDB","MDLZ","MDT","MDU","MET","META","MFC","MGM","MHK","MKC","MKTX","MLM","MMC","MMM","MNST","MO","MOH","MOS","MPC","MPLX","MPWR","MRK","MRNA","MRVL","MS","MSBI","MSCI","MSEX","MSFT","MSI","MTB","MTCH","MTD","MTZ","MU","NCLH","NDAQ","NDSN","NEE","NEM","NET","NEWT","NFG","NFLX","NI","NIO","NJR","NKE","NOC","NOW","NRG","NSC","NSIT","NTAP","NTES","NTRS","NU","NUE","NVDA","NVO","NVR","NWS","NWSA","NXPI","O","OCCI","ODFL","OGS","OKE","OKTA","OMC","ON","OPEN","ORCL","ORLY","OTEX","OTIS","OXY","PAA","PANW","PAYC","PAYX","PBT","PCAR","PCG","PDD","PEG","PEP","PFE","PFG","PG","PGR","PH","PHM","PINS","PKG","PLBY","PLD","PLTR","PLUG","PM","PNC","PNR","PNW","PODD","POOL","PPG","PPL","PRIM","PRLB","PRU","PSA","PSEC","PSTG","PSX","PTC","PURE","PWR","PYPL","QCOM","QLYS","QRVO","QSR","RBA","RBLX","RCL","REAL","REG","REGN","RF","RIVN","RJF","RL","RMD","ROAD","ROK","ROKU","ROL","ROP","ROST","RPD","RSG","RTX","RUN","RVTY","RXO","RY","S","SAIA","SAIL","SAP","SBAC","SBUX","SCHW","SEDG","SHEL","SHOP","SHW","SJM","SJT","SKYW","SLB","SLF","SMCI","SNA","SNAP","SNOW","SNPS","SNY","SO","SOFI","SOL","SOLV","SPG","SPGI","SPWR","SRE","STC","STE","STLD","STRL","STT","STX","STZ","SU","SW","SWK","SWKS","SWX","SYF","SYK","SYY","T","TAP","TCEHY","TD","TDG","TDY","TEAM","TECH","TEL","TENB","TER","TFC","TFI","TGT","TJX","TKO","TM","TMO","TMUS","TPL","TPR","TRGP","TRI","TRMB","TROW","TRV","TSCO","TSLA","TSLX","TSM","TSN","TT","TTD","TTE","TTWO","TWLO","TXN","TXT","TYL","U","UAL","UBER","UDR","UGI","UHS","UL","ULTA","UNH","UNP","UPS","UPST","URI","USAC","USB","USFD","V","VEEV","VICI","VLO","VLTO","VMC","VOC","VRNS","VRSK","VRSN","VRTX","VST","VTR","VTRS","VZ","WAB","WAT","WBA","WBD","WCN","WDAY","WDC","WEC","WELL","WES","WFC","WM","WMB","WMT","WPM","WRB","WSM","WSO","WST","WTW","WY","WYNN","XEL","XOM","XPEV","XYL","XYZ","YORW","YUM","ZBH","ZBRA","ZM","ZS","ZTS"]
+# =========================
+# CONEXÃO COM GOOGLE SHEETS
+# =========================
+scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+creds = ServiceAccountCredentials.from_json_keyfile_dict(dict(st.secrets["google_sheets"]), scope)
+client = gspread.authorize(creds)
 
-def detect_inside_bar(df):
-    """Detecta Inside Bar: máxima atual < máxima anterior E mínima atual > mínima anterior"""
+SHEET_ID = "1NMCkkcrTFOm1ZoOiImzzRRFd6NEn5kMPTkuc5j_3DcQ"
+worksheet = client.open_by_key(SHEET_ID).sheet1  # primeira aba
+
+# =========================
+# FUNÇÕES AUXILIARES
+# =========================
+def detect_strat(df):
+    """Detecta setups TheStrat na última vela"""
     if len(df) < 2:
-        return False, None
-    
-    current = df.iloc[-1]
-    previous = df.iloc[-2]
-    
-    is_inside = (current['High'] < previous['High']) and (current['Low'] > previous['Low'])
-    
-    if is_inside:
-        change_pct = ((current['Close'] - current['Open']) / current['Open']) * 100
-        return True, {
-            'type': 'Inside Bar',
-            'price': current['Close'],
-            'change_pct': change_pct,
-            'range': f"${current['Low']:.2f} - ${current['High']:.2f}",
-            'volume': current['Volume'],
-            'date': current.name.strftime('%Y-%m-%d')
-        }
-    
-    return False, None
-
-def detect_hammer_setup(df):
-    """Detecta Hammer Setup: martelo que rompeu mínima anterior e fechou verde"""
-    if len(df) < 3:
-        return False, None
-    
-    current = df.iloc[-1]
-    previous = df.iloc[-2]
-    
-    # Condições do hammer
-    body_size = abs(current['Close'] - current['Open'])
-    total_range = current['High'] - current['Low']
-    lower_shadow = min(current['Open'], current['Close']) - current['Low']
-    upper_shadow = current['High'] - max(current['Open'], current['Close'])
-    
-    # Critérios para hammer
-    is_small_body = body_size <= 0.4 * total_range
-    is_long_lower_shadow = lower_shadow >= 2 * body_size
-    is_short_upper_shadow = upper_shadow <= body_size
-    broke_below = current['Low'] < previous['Low']
-    closed_green = current['Close'] > current['Open']
-    
-    is_hammer = is_small_body and is_long_lower_shadow and is_short_upper_shadow
-    is_hammer_setup = is_hammer and broke_below and closed_green
-    
-    if is_hammer_setup:
-        recovery_pct = ((current['Close'] - current['Low']) / current['Low']) * 100
-        return True, {
-            'type': 'Hammer Setup',
-            'price': current['Close'],
-            'recovery_pct': recovery_pct,
-            'broke_level': previous['Low'],
-            'volume': current['Volume'],
-            'date': current.name.strftime('%Y-%m-%d')
-        }
-    
-    return False, None
-
-@st.cache_data(ttl=3600)  # Cache por 1 hora
-def get_stock_data(symbol, period='1y', interval='1d'):
-    """Busca dados da ação usando yfinance"""
-    try:
-        ticker = yf.Ticker(symbol)
-        data = ticker.history(period=period, interval=interval)
-        if data.empty:
-            return None
-        return data
-    except Exception as e:
-        st.sidebar.error(f"Erro em {symbol}: {str(e)}")
         return None
+    
+    c, p = df.iloc[-1], df.iloc[-2]
+    if c["High"] < p["High"] and c["Low"] > p["Low"]:
+        return "1"   # Inside bar
+    elif c["High"] > p["High"] and c["Low"] >= p["Low"]:
+        return "2u"  # Two Up
+    elif c["Low"] < p["Low"] and c["High"] <= p["High"]:
+        return "2d"  # Two Down
+    elif c["High"] > p["High"] and c["Low"] < p["Low"]:
+        return "3"   # Outside
+    return ""
 
+def calc_atr(df, period=14):
+    """Calcula ATR"""
+    df["H-L"] = df["High"] - df["Low"]
+    df["H-C"] = abs(df["High"] - df["Close"].shift())
+    df["L-C"] = abs(df["Low"] - df["Close"].shift())
+    tr = df[["H-L", "H-C", "L-C"]].max(axis=1)
+    atr = tr.rolling(period).mean()
+    return atr.iloc[-1]
+
+def load_symbols():
+    data = worksheet.get_all_records()
+    df = pd.DataFrame(data)
+    if "Symbol" not in df.columns:
+        st.error("❌ A planilha precisa ter a coluna 'Symbol'")
+        return []
+    return df["Symbol"].dropna().unique().tolist()
+
+# =========================
+# MAIN APP
+# =========================
 def main():
-    st.markdown('<h1 class="main-header">Scanner de Setups Profissional</h1>', unsafe_allow_html=True)
-    st.markdown("**Análise automatizada de Inside Bars e Hammer Setups em 664 símbolos**")
-    
-    # Sidebar
-    st.sidebar.header("Configurações")
-    
-    # Seleção de timeframes
-    timeframes = {
-        "Daily (1D)": ("1y", "1d"),
-        "Weekly (1W)": ("2y", "1wk"), 
-        "Monthly (1M)": ("5y", "1mo")
-    }
-    
-    selected_timeframe = st.sidebar.selectbox(
-        "Timeframe:",
-        list(timeframes.keys()),
-        index=0
-    )
-    
-    # Seleção de setups
-    st.sidebar.subheader("Setups para Detectar:")
-    detect_inside_bar_flag = st.sidebar.checkbox("Inside Bar", value=True)
-    detect_hammer_flag = st.sidebar.checkbox("Hammer Setup", value=True)
-    
-    # Limite de símbolos para teste
-    max_symbols = st.sidebar.slider("Máximo de símbolos para analisar:", 10, 664, 100)
-    
-    # Botão para iniciar scan
-    if st.sidebar.button("Iniciar Scanner", type="primary"):
-        if not detect_inside_bar_flag and not detect_hammer_flag:
-            st.error("Selecione pelo menos um setup para detectar!")
-            return
-            
-        period, interval = timeframes[selected_timeframe]
-        
-        # Métricas em tempo real
-        col1, col2, col3, col4 = st.columns(4)
-        
-        with col1:
-            processed_metric = st.metric("Processados", "0")
-        with col2:
-            found_metric = st.metric("Setups Encontrados", "0")
-        with col3:
-            errors_metric = st.metric("Erros", "0")
-        with col4:
-            progress_metric = st.metric("Progresso", "0%")
-        
-        # Barra de progresso
-        progress_bar = st.progress(0)
-        status_text = st.empty()
-        
-        # Containers para resultados
-        results_container = st.container()
-        
-        # Variáveis para tracking
-        processed_count = 0
-        found_setups = []
-        error_count = 0
-        
-        # Processar símbolos
-        symbols_to_process = SYMBOLS[:max_symbols]
-        
-        for i, symbol in enumerate(symbols_to_process):
-            status_text.text(f"Analisando {symbol}...")
-            
-            try:
-                # Buscar dados
-                df = get_stock_data(symbol, period, interval)
-                
-                if df is not None and len(df) >= 10:
-                    setup_found = False
-                    setup_info = None
-                    
-                    # Detectar Inside Bar
-                    if detect_inside_bar_flag:
-                        is_inside, info = detect_inside_bar(df)
-                        if is_inside:
-                            found_setups.append({
-                                'symbol': symbol,
-                                'setup_info': info
-                            })
-                            setup_found = True
-                            setup_info = info
-                    
-                    # Detectar Hammer Setup
-                    if detect_hammer_flag and not setup_found:
-                        is_hammer, info = detect_hammer_setup(df)
-                        if is_hammer:
-                            found_setups.append({
-                                'symbol': symbol,
-                                'setup_info': info
-                            })
-                            setup_found = True
-                            setup_info = info
-                
-                processed_count += 1
-                
-            except Exception as e:
-                error_count += 1
-                st.sidebar.error(f"Erro em {symbol}: {str(e)}")
-            
-            # Atualizar métricas
-            progress = (i + 1) / len(symbols_to_process)
-            progress_bar.progress(progress)
-            
-            processed_metric.metric("Processados", str(processed_count))
-            found_metric.metric("Setups Encontrados", str(len(found_setups)))
-            errors_metric.metric("Erros", str(error_count))
-            progress_metric.metric("Progresso", f"{progress*100:.1f}%")
-            
-            # Pequena pausa para não sobrecarregar
-            time.sleep(0.05)
-        
-        status_text.text("Scanner concluído!")
-        
-        # Mostrar resultados em tabela
-        if found_setups:
-            st.success(f"**{len(found_setups)} setups encontrados!**")
-            
-            with results_container:
-                st.header("Resultados Encontrados")
-                
-                # Criar DataFrame para exibição
-                results_data = []
-                for setup in found_setups:
-                    symbol = setup['symbol']
-                    info = setup['setup_info']
-                    
-                    if info['type'] == 'Inside Bar':
-                        results_data.append({
-                            'Symbol': symbol,
-                            'Setup': 'Inside Bar',
-                            'Price': f"${info['price']:.2f}",
-                            'Change %': f"{info['change_pct']:.2f}%",
-                            'Range': info['range'],
-                            'Volume': f"{info['volume']:,}",
-                            'Date': info['date'],
-                            'TradingView': f"https://www.tradingview.com/symbols/{symbol}/"
-                        })
-                    else:  # Hammer Setup
-                        results_data.append({
-                            'Symbol': symbol,
-                            'Setup': 'Hammer Setup',
-                            'Price': f"${info['price']:.2f}",
-                            'Recovery %': f"+{info['recovery_pct']:.2f}%",
-                            'Broke Level': f"${info['broke_level']:.2f}",
-                            'Volume': f"{info['volume']:,}",
-                            'Date': info['date'],
-                            'TradingView': f"https://www.tradingview.com/symbols/{symbol}/"
-                        })
-                
-                # Exibir tabela
-                df_results = pd.DataFrame(results_data)
-                st.dataframe(df_results, use_container_width=True)
-                
-                # Separar por tipo
-                inside_bars = [s for s in found_setups if s['setup_info']['type'] == 'Inside Bar']
-                hammers = [s for s in found_setups if s['setup_info']['type'] == 'Hammer Setup']
-                
-                if inside_bars:
-                    st.subheader(f"Inside Bars ({len(inside_bars)})")
-                    inside_data = []
-                    for setup in inside_bars:
-                        info = setup['setup_info']
-                        inside_data.append({
-                            'Symbol': setup['symbol'],
-                            'Price': f"${info['price']:.2f}",
-                            'Change': f"{info['change_pct']:.2f}%",
-                            'Range': info['range'],
-                            'Volume': f"{info['volume']:,}",
-                            'Date': info['date']
-                        })
-                    st.dataframe(pd.DataFrame(inside_data), use_container_width=True)
-                
-                if hammers:
-                    st.subheader(f"Hammer Setups ({len(hammers)})")
-                    hammer_data = []
-                    for setup in hammers:
-                        info = setup['setup_info']
-                        hammer_data.append({
-                            'Symbol': setup['symbol'],
-                            'Price': f"${info['price']:.2f}",
-                            'Recovery': f"+{info['recovery_pct']:.2f}%",
-                            'Broke Level': f"${info['broke_level']:.2f}",
-                            'Volume': f"{info['volume']:,}",
-                            'Date': info['date']
-                        })
-                    st.dataframe(pd.DataFrame(hammer_data), use_container_width=True)
-                
-                # Botão de download dos resultados
-                if st.button("Download Resultados CSV"):
-                    csv = df_results.to_csv(index=False)
-                    st.download_button(
-                        label="Baixar CSV",
-                        data=csv,
-                        file_name=f"scanner_results_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
-                        mime="text/csv"
-                    )
-        else:
-            st.warning("Nenhum setup encontrado com os critérios selecionados. Tente:")
-            st.info("• Aumentar o número de símbolos analisados\n• Testar timeframes diferentes\n• Verificar se o mercado teve movimentos recentes")
+    st.markdown('<h4 style="text-align:left; font-size:1.2rem; margin-bottom:1rem; color: #ccc;">Scanner TheStrat</h4>', unsafe_allow_html=True)
+
+    symbols = load_symbols()
+    st.info(f"Analisando {len(symbols)} símbolos da planilha")
+
+    results = []
+
+    for sym in symbols[:50]:  # limite inicial p/ não travar
+        try:
+            data_day = yf.download(sym, period="6mo", interval="1d", progress=False)
+            data_wk = yf.download(sym, period="1y", interval="1wk", progress=False)
+            data_mo = yf.download(sym, period="5y", interval="1mo", progress=False)
+
+            if data_day.empty or data_wk.empty or data_mo.empty:
+                continue
+
+            setup_day = detect_strat(data_day)
+            setup_wk = detect_strat(data_wk)
+            setup_mo = detect_strat(data_mo)
+
+            # Qtr = agrupando meses de 3 em 3
+            data_qtr = data_mo.resample("Q").agg({"Open":"first","High":"max","Low":"min","Close":"last"})
+            setup_qtr = detect_strat(data_qtr)
+
+            # Year
+            data_yr = data_mo.resample("Y").agg({"Open":"first","High":"max","Low":"min","Close":"last"})
+            setup_yr = detect_strat(data_yr)
+
+            last_price = data_day["Close"].iloc[-1]
+            net_chg = last_price - data_day["Close"].iloc[-2]
+            atr = calc_atr(data_day)
+
+            results.append({
+                "Symbol": sym,
+                "Last": round(last_price, 2),
+                "Net Chng": round(net_chg, 2),
+                "Day": setup_day,
+                "Wk": setup_wk,
+                "Month": setup_mo,
+                "Qtr": setup_qtr,
+                "Year": setup_yr,
+                "ATR": round(atr, 2) if atr else None
+            })
+        except Exception as e:
+            st.warning(f"Erro em {sym}: {e}")
+
+    if results:
+        df_results = pd.DataFrame(results)
+
+        # Renderizar tabela estilizada
+        html_table = "<table>"
+        html_table += "<tr>" + "".join(f"<th>{col}</th>" for col in df_results.columns) + "</tr>"
+
+        for _, row in df_results.iterrows():
+            html_table += "<tr>"
+            for col in df_results.columns:
+                value = row[col]
+                color = "#eee"
+                if str(value).lower() in ["1", "2u", "2d", "3"]:
+                    color = "#00ff00"  # setups em verde
+                html_table += f"<td style='color:{color}'>{value}</td>"
+            html_table += "</tr>"
+
+        html_table += "</table>"
+        st.markdown(html_table, unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
