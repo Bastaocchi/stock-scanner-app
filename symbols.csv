@@ -1,0 +1,668 @@
+symbols,Company,TradingView_Sector,TradingView_Industry,Sector_SPDR,TAGS,Exchange
+A,Agilent Technologies Inc,Electronic Technology,Electronic Equipment/Instruments,XLV - Health Care,,NYSE
+AAL,American Airlines Group Inc,Transportation,Airlines,XLI - Industrials,airlines,NASDAQ
+AAPL,Apple Inc,Electronic Technology,Computer Processing Hardware,XLK - Technology,mag7,NASDAQ
+ABBV,AbbVie Inc,Health Technology,Pharmaceuticals: Major,XLV - Health Care,,NYSE
+ABNB,Airbnb Inc,Consumer Services,Hotels/Resorts/Cruise lines,XLY - Consumer Discretionary,,NASDAQ
+ABT,Abbott Laboratories,Health Technology,Medical Specialties,XLV - Health Care,,NYSE
+ACGL,Arch Capital Group Ltd,Finance,Specialty Insurance,XLF - Financial,,NASDAQ
+ACN,Accenture plc,Technology Services,Information Technology Services,XLK - Technology,,NYSE
+ADBE,Adobe Inc,Technology Services,Packaged Software,XLK - Technology,,NASDAQ
+ADI,Analog Devices Inc,Electronic Technology,Semiconductors,XLK - Technology,,NASDAQ
+ADM,Archer-Daniels-Midland Company,Process Industries,Agricultural Commodities/Milling,XLP - Consumer Staples,,NYSE
+ADP,Automatic Data Processing Inc,Technology Services,Data Processing Services,XLI - Industrials,,NASDAQ
+ADSK,Autodesk Inc,Technology Services,Packaged Software,XLK - Technology,,NASDAQ
+AEE,Ameren Corporation,Utilities,Electric Utilities,XLU - Utilities,,NYSE
+AEP,American Electric Power Company Inc,Utilities,Electric Utilities,XLU - Utilities,,NASDAQ
+AES,The AES Corporation,Utilities,Electric Utilities,XLU - Utilities,,NYSE
+AFL,Aflac Incorporated,Finance,Life/Health Insurance,XLF - Financial,,NYSE
+AFRM,Affirm Holdings Inc,Finance,Finance/Rental/Leasing,XLF - Financial,,NASDAQ
+AIG,American International Group Inc,Finance,Property/Casualty Insurance,XLF - Financial,,NYSE
+AIZ,Assurant Inc,Finance,Property/Casualty Insurance,XLF - Financial,,NYSE
+AJG,Arthur J Gallagher & Co,Finance,Insurance Brokers/Services,XLF - Financial,,NYSE
+AKAM,Akamai Technologies Inc,Technology Services,Internet Software/Services,XLK - Technology,,NASDAQ
+ALB,Albemarle Corporation,Process Industries,Chemicals: Specialty,XLB - Materials,,NYSE
+ALGN,Align Technology Inc,Health Technology,Medical Specialties,XLV - Health Care,,NASDAQ
+ALK,Alaska Air Group Inc,Transportation,Airlines,XLI - Industrials,airlines aviao,NYSE
+ALL,The Allstate Corporation,Finance,Property/Casualty Insurance,XLF - Financial,,NYSE
+ALLE,Allegion plc,Producer Manufacturing,Building Products,XLI - Industrials,,NYSE
+AM,Antero Midstream Corporation,Industrial Services,Oil & Gas Pipelines,XLE - Energy,,NYSE
+AMAT,Applied Materials Inc,Electronic Technology,Electronic Production Equipment,XLK - Technology,,NASDAQ
+AMCR,Amcor plc,Process Industries,Containers/Packaging,XLB - Materials,,NYSE
+AMD,Advanced Micro Devices Inc,Electronic Technology,Semiconductors,XLK - Technology,,NASDAQ
+AME,AMETEK Inc,Electronic Technology,Electronic Equipment/Instruments,XLI - Industrials,,NYSE
+AMGN,Amgen Inc,Health Technology,Biotechnology,XLV - Health Care,,NASDAQ
+AMP,Ameriprise Financial Inc,Finance,Investment Managers,XLF - Financial,,NYSE
+AMT,American Tower Corporation,Finance,Real Estate Investment Trusts,XLRE - Real State,,NYSE
+AMZN,Amazoncom Inc,Retail Trade,Internet Retail,XLY - Consumer Discretionary,mag7,NASDAQ
+ANET,Arista Networks Inc,Electronic Technology,Telecommunications Equipment,XLK - Technology,,NYSE
+AON,Aon plc,Finance,Insurance Brokers/Services,XLF - Financial,,NYSE
+AOS,A O Smith Corporation,Producer Manufacturing,Industrial Machinery,XLI - Industrials,,NYSE
+APA,APA Corporation,Energy Minerals,Oil & Gas Production,XLE - Energy,,NASDAQ
+APD,Air Products and Chemicals Inc,Process Industries,Chemicals: Specialty,XLB - Materials,,NYSE
+APH,Amphenol Corporation,Electronic Technology,Electronic Components,XLK - Technology,,NYSE
+APO,Apollo Global Management Inc,Finance,Investment Managers,XLF - Financial,,NYSE
+ARCC,Ares Capital Corporation,Finance,Investment Managers,XLF - Financial,,NASDAQ
+ARE,Alexandria Real Estate Equities Inc,Finance,Real Estate Investment Trusts,XLRE - Real State,,NYSE
+ARTNA,Artesian Resources Corporation,Utilities,Water Utilities,XLU - Utilities,,NASDAQ
+ASML,ASML Holding NV,Electronic Technology,Electronic Production Equipment,XLK - Technology,,NASDAQ
+ATO,Atmos Energy Corporation,Utilities,Gas Distributors,XLU - Utilities,,NYSE
+AVB,AvalonBay Communities Inc,Finance,Real Estate Investment Trusts,XLRE - Real State,,NYSE
+AVGO,Broadcom Inc,Electronic Technology,Semiconductors,XLK - Technology,,NASDAQ
+AVY,Avery Dennison Corporation,Process Industries,Containers/Packaging,XLB - Materials,,NYSE
+AWK,American Water Works Company Inc,Utilities,Water Utilities,XLU - Utilities,,NYSE
+AXON,Axon Enterprise Inc,Electronic Technology,Electronic Equipment/Instruments,XLI - Industrials,,NASDAQ
+AXP,American Express Company,Finance,Finance/Rental/Leasing,XLF - Financial,,NYSE
+AZN,AstraZeneca PLC,Health Technology,Pharmaceuticals: Major,XLV - Health Care,,NASDAQ
+AZO,AutoZone Inc,Retail Trade,Specialty Stores,XLY - Consumer Discretionary,,NYSE
+BA,The Boeing Company,Electronic Technology,Aerospace & Defense,XLI - Industrials,,NYSE
+BABA,Alibaba Group Holding Limited,Retail Trade,Internet Retail,XLY - Consumer Discretionary,,NYSE
+BAC,Bank of America Corporation,Finance,Major Banks,XLF - Financial,,NYSE
+BALL,Ball Corporation,Process Industries,Containers/Packaging,XLB - Materials,,NYSE
+BAX,Baxter International Inc,Health Technology,Medical Specialties,XLV - Health Care,,NYSE
+BBDC,Barings BDC Inc,Finance,Investment Managers,XLF - Financial,,NYSE
+BBY,Best Buy Co Inc,Retail Trade,Specialty Stores,XLY - Consumer Discretionary,,NYSE
+BDX,Becton Dickinson and Company,Health Technology,Medical Specialties,XLV - Health Care,,NYSE
+BE,Bloom Energy Corporation,Electronic Technology,Electronic Production Equipment,XLU - Utilities,,NYSE
+BEN,Franklin Resources Inc,Finance,Investment Managers,XLF - Financial,,NYSE
+BG,Bunge Global SA,Process Industries,Agricultural Commodities/Milling,XLP - Consumer Staples,,NYSE
+BIDU,Baidu Inc,Technology Services,Internet Software/Services,XLC - Communication Services,,NASDAQ
+BIIB,Biogen Inc,Health Technology,Biotechnology,XLV - Health Care,,NASDAQ
+BILL,Billcom Holdings Inc,Technology Services,Packaged Software,XLK - Technology,,NYSE
+BIZD,VanEck BDC Income ETF,Finance,Investment Managers,XLF - Financial,,PCX
+BK,The Bank of New York Mellon Corporation,Finance,Major Banks,XLF - Financial,,NYSE
+BKNG,Booking Holdings Inc,Consumer Services,Other Consumer Services,XLY - Consumer Discretionary,,NASDAQ
+BKR,Baker Hughes Company,Industrial Services,Oilfield Services/Equipment,XLE - Energy,,NASDAQ
+BLDP,Ballard Power Systems Inc,Electronic Technology,Electronic Production Equipment,XLU - Utilities,,NGM
+BLK,BlackRock Inc,Finance,Investment Managers,XLF - Financial,,NYSE
+BMO,Bank of Montreal,Finance,Major Banks,XLF - Financial,,NYSE
+BMY,Bristol-Myers Squibb Company,Health Technology,Pharmaceuticals: Major,XLV - Health Care,,NYSE
+BNS,The Bank of Nova Scotia,Finance,Major Banks,XLF - Financial,,NYSE
+BP,BP plc,Energy Minerals,Integrated Oil,XLE - Energy,,NYSE
+BR,Broadridge Financial Solutions Inc,Technology Services,Data Processing Services,XLF - Financial,,NYSE
+BRO,Brown & Brown Inc,Finance,Insurance Brokers/Services,XLF - Financial,,NYSE
+BSX,Boston Scientific Corporation,Health Technology,Medical Specialties,XLV - Health Care,,NYSE
+BX,Blackstone Inc,Finance,Investment Managers,XLF - Financial,,NYSE
+BXP,BXP Inc,Finance,Real Estate Investment Trusts,XLRE - Real State,,NYSE
+BXSL,Blackstone Secured Lending Fund,Finance,Investment Managers,XLF - Financial,,NYSE
+BYND,Beyond Meat Inc,Consumer Non-durables,Food: Specialty/Candy,XLP - Consumer Staples,,NASDAQ
+C,Citigroup Inc,Finance,Major Banks,XLF - Financial,,NYSE
+CAG,Conagra Brands Inc,Consumer Non-durables,Food: Major Diversified,XLP - Consumer Staples,,NYSE
+CAH,Cardinal Health Inc,Distribution Services,Medical Distributors,XLV - Health Care,,NYSE
+CAPL,CrossAmerica Partners LP,Industrial Services,Oil & Gas Pipelines,XLE - Energy,,NYSE
+CARR,Carrier Global Corporation,Producer Manufacturing,Industrial Machinery,XLI - Industrials,,NYSE
+CAT,Caterpillar Inc,Producer Manufacturing,Trucks/Construction/Farm Machinery,XLI - Industrials,,NYSE
+CB,Chubb Limited,Finance,Property/Casualty Insurance,XLF - Financial,,NYSE
+CBOE,Cboe Global Markets Inc,Finance,Investment Banks/Brokers,XLF - Financial,,BTS
+CBRE,CBRE Group Inc,Finance,Real Estate Development,XLRE - Real State,,NYSE
+CCI,Crown Castle Inc,Finance,Real Estate Investment Trusts,XLRE - Real State,,NYSE
+CCL,Carnival Corporation & plc,Consumer Services,Hotels/Resorts/Cruise lines,XLY - Consumer Discretionary,navio cruzeiro,NYSE
+CCO,Cameco Corporation,Energy Minerals,Other Energy,XLE - Energy,,NYSE
+CDNS,Cadence Design Systems Inc,Technology Services,Packaged Software,XLK - Technology,,NASDAQ
+CDW,CDW Corporation,Technology Services,Information Technology Services,XLK - Technology,,NASDAQ
+CDZI,Cadiz Inc,Utilities,Water Utilities,XLU - Utilities,,NGM
+CEG,Constellation Energy Corporation,Utilities,Electric Utilities,XLU - Utilities,,NASDAQ
+CF,CF Industries Holdings Inc,Process Industries,Chemicals: Agricultural,XLB - Materials,,NYSE
+CFG,Citizens Financial Group Inc,Finance,Regional Banks,XLF - Financial,,NYSE
+CGBD,Carlyle Secured Lending Inc,Finance,Investment Managers,XLF - Financial,,NASDAQ
+CHD,Church & Dwight Co Inc,Consumer Non-durables,Household/Personal Care,XLP - Consumer Staples,,NYSE
+CHKP,Check Point Software Technologies Ltd,Technology Services,Packaged Software,XLK - Technology,,NASDAQ
+CHRW,CH Robinson Worldwide Inc,Transportation,Trucking,XLI - Industrials,,NASDAQ
+CHTR,Charter Communications Inc,Consumer Services,Cable/Satellite TV,XLC - Communication Services,,NASDAQ
+CI,The Cigna Group,Health Services,Managed Health Care,XLV - Health Care,,NYSE
+CINF,Cincinnati Financial Corporation,Finance,Property/Casualty Insurance,XLF - Financial,,NASDAQ
+CL,Colgate-Palmolive Company,Consumer Non-durables,Household/Personal Care,XLP - Consumer Staples,,NYSE
+CLX,The Clorox Company,Consumer Non-durables,Household/Personal Care,XLP - Consumer Staples,,NYSE
+CM,Canadian Imperial Bank of Commerce,Finance,Major Banks,XLF - Financial,,NYSE
+CMCSA,Comcast Corporation,Consumer Services,Cable/Satellite TV,XLC - Communication Services,,NASDAQ
+CME,CME Group Inc,Finance,Investment Banks/Brokers,XLF - Financial,,NASDAQ
+CMG,Chipotle Mexican Grill Inc,Consumer Services,Restaurants,XLY - Consumer Discretionary,,NYSE
+CMI,Cummins Inc,Producer Manufacturing,Trucks/Construction/Farm Machinery,XLI - Industrials,,NYSE
+CMS,CMS Energy Corporation,Utilities,Electric Utilities,XLU - Utilities,,NYSE
+CNC,Centene Corporation,Health Services,Managed Health Care,XLV - Health Care,,NYSE
+CNI,Canadian National Railway Company,Transportation,Railroads,XLI - Industrials,,NYSE
+CNP,CenterPoint Energy Inc,Utilities,Electric Utilities,XLU - Utilities,,NYSE
+CNQ,Canadian Natural Resources Limited,Energy Minerals,Oil & Gas Production,XLE - Energy,,NYSE
+COF,Capital One Financial Corporation,Finance,Finance/Rental/Leasing,XLF - Financial,,NYSE
+COIN,Coinbase Global Inc,Finance,Investment Banks/Brokers,XLF - Financial,,NASDAQ
+COO,The Cooper Companies Inc,Health Technology,Medical Specialties,XLV - Health Care,,NASDAQ
+COP,ConocoPhillips,Energy Minerals,Oil & Gas Production,XLE - Energy,,NYSE
+COR,Cencora Inc,Distribution Services,Medical Distributors,XLV - Health Care,,NYSE
+COST,Costco Wholesale Corporation,Retail Trade,Food Retail,XLP - Consumer Staples,,NASDAQ
+CP,Canadian Pacific Kansas City Limited,Transportation,Railroads,XLI - Industrials,,NYSE
+CPAY,Corpay Inc,Technology Services,Data Processing Services,XLF - Financial,,NYSE
+CPB,Campbell Soup Company,Consumer Non-durables,Food: Major Diversified,XLP - Consumer Staples,,NASDAQ
+CPRT,Copart Inc,Commercial Services,Miscellaneous Commercial Services,XLI - Industrials,,NASDAQ
+CPT,Camden Property Trust,Finance,Real Estate Investment Trusts,XLRE - Real State,,NYSE
+CRL,Charles River Laboratories International Inc,Health Technology,Biotechnology,XLV - Health Care,,NYSE
+CRM,Salesforce Inc,Technology Services,Packaged Software,XLK - Technology,,NYSE
+CRWD,CrowdStrike Holdings Inc,Technology Services,Packaged Software,XLK - Technology,,NASDAQ
+CSCO,Cisco Systems Inc,Electronic Technology,Telecommunications Equipment,XLK - Technology,,NASDAQ
+CSGP,CoStar Group Inc,Commercial Services,Financial Publishing/Services,XLRE - Real State,,NASDAQ
+CSIQ,Canadian Solar Inc,Electronic Technology,Electronic Production Equipment,XLU - Utilities,,NASDAQ
+CSX,CSX Corporation,Transportation,Railroads,XLI - Industrials,,NASDAQ
+CTAS,Cintas Corporation,Commercial Services,Miscellaneous Commercial Services,XLI - Industrials,,NASDAQ
+CTRA,Coterra Energy Inc,Energy Minerals,Oil & Gas Production,XLE - Energy,,NYSE
+CTSH,Cognizant Technology Solutions Corporation,Technology Services,Information Technology Services,XLK - Technology,,NASDAQ
+CTVA,Corteva Inc,Process Industries,Chemicals: Agricultural,XLB - Materials,,NYSE
+CVLT,CommVault Systems Inc,Technology Services,Packaged Software,XLK - Technology,,NASDAQ
+CVS,CVS Health Corporation,Health Services,Medical/Nursing Services,XLV - Health Care,,NYSE
+CVX,Chevron Corporation,Energy Minerals,Integrated Oil,XLE - Energy,,NYSE
+CWT,California Water Service Group,Utilities,Water Utilities,XLU - Utilities,,NYSE
+CYBR,CyberArk Software Ltd,Technology Services,Packaged Software,XLK - Technology,,NASDAQ
+CZR,Caesars Entertainment Inc,Consumer Services,Casinos/Gaming,XLY - Consumer Discretionary,,NASDAQ
+D,Dominion Energy Inc,Utilities,Electric Utilities,XLU - Utilities,,NYSE
+DAL,Delta Air Lines Inc,Transportation,Airlines,XLI - Industrials,airlines,NYSE
+DASH,DoorDash Inc,Technology Services,Other Transportation,XLY - Consumer Discretionary,,NASDAQ
+DAY,Dayforce Inc,Technology Services,Packaged Software,XLK - Technology,,NYSE
+DD,DuPont de Nemours Inc,Process Industries,Chemicals: Specialty,XLB - Materials,,NYSE
+DDOG,Datadog Inc,Technology Services,Packaged Software,XLK - Technology,,NASDAQ
+DE,Deere & Company,Producer Manufacturing,Trucks/Construction/Farm Machinery,XLI - Industrials,,NYSE
+DECK,Deckers Outdoor Corporation,Consumer Non-durables,Apparel/Footwear,XLY - Consumer Discretionary,,NYSE
+DELL,Dell Technologies Inc,Electronic Technology,Computer Processing Hardware,XLK - Technology,,NYSE
+DG,Dollar General Corporation,Retail Trade,Discount Stores,XLP - Consumer Staples,,NYSE
+DGX,Quest Diagnostics Incorporated,Health Services,Medical/Nursing Services,XLV - Health Care,,NYSE
+DHI,DR Horton Inc,Consumer Durables,Homebuilding,XLY - Consumer Discretionary,,NYSE
+DHR,Danaher Corporation,Health Technology,Medical Specialties,XLV - Health Care,,NYSE
+DIS,The Walt Disney Company,Consumer Services,Movies/Entertainment,XLC - Communication Services,,NYSE
+DLR,Digital Realty Trust Inc,Finance,Real Estate Investment Trusts,XLRE - Real State,,NYSE
+DLTR,Dollar Tree Inc,Retail Trade,Discount Stores,XLP - Consumer Staples,,NASDAQ
+DMLP,Dorchester Minerals LP,Energy Minerals,Oil & Gas Production,XLE - Energy,,NASDAQ
+DOC,Healthpeak Properties Inc,Finance,Real Estate Investment Trusts,XLRE - Real State,,NYSE
+DOCN,DigitalOcean Holdings Inc,Technology Services,Internet Software/Services,XLK - Technology,,NYSE
+DOCU,DocuSign Inc,Technology Services,Packaged Software,XLK - Technology,,NASDAQ
+DOL,Dollarama Inc,Retail Trade,Discount Stores,XLP - Consumer Staples,,PCX
+DOV,Dover Corporation,Producer Manufacturing,Industrial Machinery,XLI - Industrials,,NYSE
+DOW,Dow Inc,Process Industries,Chemicals: Major Diversified,XLB - Materials,,NYSE
+DPZ,Dominos Pizza Inc,Consumer Services,Restaurants,XLY - Consumer Discretionary,,NASDAQ
+DQ,Daqo New Energy Corp,Electronic Technology,Electronic Production Equipment,XLU - Utilities,,NYSE
+DRI,Darden Restaurants Inc,Consumer Services,Restaurants,XLY - Consumer Discretionary,,NYSE
+DTE,DTE Energy Company,Utilities,Electric Utilities,XLU - Utilities,,NYSE
+DUK,Duke Energy Corporation,Utilities,Electric Utilities,XLU - Utilities,,NYSE
+DVA,DaVita Inc,Health Services,Medical/Nursing Services,XLV - Health Care,,NYSE
+DVN,Devon Energy Corporation,Energy Minerals,Oil & Gas Production,XLE - Energy,,NYSE
+DXCM,DexCom Inc,Health Technology,Medical Specialties,XLV - Health Care,,NASDAQ
+EA,Electronic Arts Inc,Technology Services,Packaged Software,XLC - Communication Services,,NASDAQ
+EBAY,eBay Inc,Retail Trade,Internet Retail,XLY - Consumer Discretionary,,NASDAQ
+ECL,Ecolab Inc,Process Industries,Chemicals: Specialty,XLB - Materials,,NYSE
+ED,Consolidated Edison Inc,Utilities,Electric Utilities,XLU - Utilities,,NYSE
+EFX,Equifax Inc,Commercial Services,Financial Publishing/Services,XLF - Financial,,NYSE
+EG,Everest Group Ltd,Finance,Property/Casualty Insurance,XLF - Financial,,NYSE
+EIX,Edison International,Utilities,Electric Utilities,XLU - Utilities,,NYSE
+EL,The Estee Lauder Companies Inc,Consumer Non-durables,Household/Personal Care,XLY - Consumer Discretionary,,NYSE
+ELF,elf Beauty Inc,Consumer Non-durables,Household/Personal Care,XLP - Consumer Staples,,NYSE
+ELV,Elevance Health Inc,Health Services,Managed Health Care,XLV - Health Care,,NYSE
+EME,EMCOR Group Inc,Industrial Services,Engineering & Construction,XLI - Industrials,,NYSE
+EMN,Eastman Chemical Company,Process Industries,Chemicals: Specialty,XLB - Materials,,NYSE
+EMR,Emerson Electric Co,Producer Manufacturing,Electrical Products,XLI - Industrials,,NYSE
+ENB,Enbridge Inc,Industrial Services,Oil & Gas Pipelines,XLE - Energy,,NYSE
+ENPH,Enphase Energy Inc,Electronic Technology,Electronic Production Equipment,XLU - Utilities,,NGM
+EOG,EOG Resources Inc,Energy Minerals,Oil & Gas Production,XLE - Energy,,NYSE
+EPAM,EPAM Systems Inc,Technology Services,Information Technology Services,XLK - Technology,,NYSE
+EPD,Enterprise Products Partners LP,Industrial Services,Oil & Gas Pipelines,XLE - Energy,,NYSE
+EQIX,Equinix Inc,Finance,Real Estate Investment Trusts,XLRE - Real State,,NASDAQ
+EQR,Equity Residential,Finance,Real Estate Investment Trusts,XLRE - Real State,,NYSE
+EQT,EQT Corporation,Energy Minerals,Oil & Gas Production,XLE - Energy,,NYSE
+ERIE,Erie Indemnity Company,Finance,Property/Casualty Insurance,XLF - Financial,,NASDAQ
+ES,Eversource Energy,Utilities,Electric Utilities,XLU - Utilities,,NYSE
+ESS,Essex Property Trust Inc,Finance,Real Estate Investment Trusts,XLRE - Real State,,NYSE
+ESTC,Elastic NV,Technology Services,Packaged Software,XLK - Technology,,NYSE
+ET,Energy Transfer LP,Industrial Services,Oil & Gas Pipelines,XLE - Energy,,NYSE
+ETN,Eaton Corporation plc,Producer Manufacturing,Electrical Products,XLI - Industrials,,NYSE
+ETR,Entergy Corporation,Utilities,Electric Utilities,XLU - Utilities,,NYSE
+EVRG,Evergy Inc,Utilities,Electric Utilities,XLU - Utilities,,NASDAQ
+EW,Edwards Lifesciences Corporation,Health Technology,Medical Specialties,XLV - Health Care,,NYSE
+EXC,Exelon Corporation,Utilities,Electric Utilities,XLU - Utilities,,NASDAQ
+EXE,Expand Energy Corporation,Energy Minerals,Oil & Gas Production,XLE - Energy,,NASDAQ
+EXPD,Expeditors International of Washington Inc,Transportation,Air Freight/Couriers,XLI - Industrials,,NYSE
+EXPE,Expedia Group Inc,Consumer Services,Hotels/Resorts/Cruise lines,XLY - Consumer Discretionary,,NASDAQ
+EXR,Extra Space Storage Inc,Finance,Real Estate Investment Trusts,XLRE - Real State,,NYSE
+F,Ford Motor Company,Consumer Durables,Motor Vehicles,XLY - Consumer Discretionary,,NYSE
+FANG,Diamondback Energy Inc,Energy Minerals,Oil & Gas Production,XLE - Energy,,NASDAQ
+FAST,Fastenal Company,Distribution Services,Wholesale Distributors,XLI - Industrials,,NASDAQ
+FCEL,FuelCell Energy Inc,Electronic Technology,Electronic Production Equipment,XLU - Utilities,,NGM
+FCX,Freeport-McMoRan Inc,Non-energy Minerals,Other Metals/Minerals,XLB - Materials,,NYSE
+FDS,FactSet Research Systems Inc,Technology Services,Packaged Software,XLF - Financial,,NYSE
+FDX,FedEx Corporation,Transportation,Air Freight/Couriers,XLI - Industrials,,NYSE
+FE,FirstEnergy Corp,Utilities,Electric Utilities,XLU - Utilities,,NYSE
+FFIV,F5 Inc,Technology Services,Packaged Software,XLK - Technology,,NASDAQ
+FI,Fiserv Inc,Technology Services,Data Processing Services,XLF - Financial,,NYSE
+FICO,Fair Isaac Corporation,Technology Services,Packaged Software,XLF - Financial,,NYSE
+FIS,Fidelity National Information Services Inc,Technology Services,Data Processing Services,XLF - Financial,,NYSE
+FITB,Fifth Third Bancorp,Finance,Regional Banks,XLF - Financial,,NASDAQ
+FLEX,Flex Ltd,Electronic Technology,Electronic Production Equipment,XLK - Technology,,NASDAQ
+FNF,Fidelity National Financial Inc,Finance,Financial Conglomerates,XLF - Financial,,NYSE
+FNV,Franco-Nevada Corporation,Non-energy Minerals,Precious Metals,XLB - Materials,,NYSE
+FOUR,Shift4 Payments Inc,Technology Services,Data Processing Services,XLF - Financial,,NYSE
+FOX,Fox Corporation,Consumer Services,Broadcasting,XLC - Communication Services,,NASDAQ
+FOXA,Fox Corporation,Consumer Services,Broadcasting,XLC - Communication Services,,NASDAQ
+FROG,JFrog Ltd,Technology Services,Packaged Software,XLK - Technology,,NASDAQ
+FRT,Federal Realty Investment Trust,Finance,Real Estate Investment Trusts,XLRE - Real State,,NYSE
+FSK,FS KKR Capital Corp,Finance,Investment Managers,XLF - Financial,,NYSE
+FSLR,First Solar Inc,Electronic Technology,Electronic Production Equipment,XLU - Utilities,,NASDAQ
+FTNT,Fortinet Inc,Technology Services,Packaged Software,XLK - Technology,,NASDAQ
+FTV,Fortive Corporation,Electronic Technology,Electronic Equipment/Instruments,XLI - Industrials,,NYSE
+GAIN,Gladstone Investment Corporation,Finance,Investment Managers,XLF - Financial,,NASDAQ
+GBDC,Golub Capital BDC Inc,Finance,Investment Managers,XLF - Financial,,NASDAQ
+GD,General Dynamics Corporation,Electronic Technology,Aerospace & Defense,XLI - Industrials,,NYSE
+GDDY,GoDaddy Inc,Technology Services,Internet Software/Services,XLK - Technology,,NYSE
+GDOT,Green Dot Corporation,Finance,Finance/Rental/Leasing,XLF - Financial,,NYSE
+GE,General Electric Company,Electronic Technology,Electronic Equipment/Instruments,XLI - Industrials,,NYSE
+GEHC,GE HealthCare Technologies Inc,Health Technology,Medical Specialties,XLV - Health Care,,NASDAQ
+GEL,Genesis Energy LP,Industrial Services,Oil & Gas Pipelines,XLE - Energy,,NYSE
+GEN,Gen Digital Inc,Technology Services,Packaged Software,XLK - Technology,,NASDAQ
+GEV,GE Vernova Inc,Utilities,Alternative Power Generation,XLI - Industrials,,NYSE
+GILD,Gilead Sciences Inc,Health Technology,Pharmaceuticals: Major,XLV - Health Care,,NASDAQ
+GIS,General Mills Inc,Consumer Non-durables,Food: Major Diversified,XLP - Consumer Staples,,NYSE
+GL,Globe Life Inc,Finance,Life/Health Insurance,XLF - Financial,,NYSE
+GLW,Corning Incorporated,Electronic Technology,Electronic Components,XLK - Technology,,NYSE
+GM,General Motors Company,Consumer Durables,Motor Vehicles,XLY - Consumer Discretionary,,NYSE
+GNRC,Generac Holdings Inc,Producer Manufacturing,Electrical Products,XLI - Industrials,,NYSE
+GOOG,Alphabet Inc Class C,Technology Services,Internet Software/Services,XLC - Communication Services,,NASDAQ
+GOOGL,Alphabet Inc Class A,Technology Services,Internet Software/Services,XLC - Communication Services,,NASDAQ
+GPC,Genuine Parts Company,Distribution Services,Wholesale Distributors,XLY - Consumer Discretionary,,NYSE
+GPN,Global Payments Inc,Technology Services,Data Processing Services,XLF - Financial,,NYSE
+GRMN,Garmin Ltd,Electronic Technology,Electronic Equipment/Instruments,XLK - Technology,,NYSE
+GS,The Goldman Sachs Group Inc,Finance,Investment Banks/Brokers,XLF - Financial,,NYSE
+GSBD,Goldman Sachs BDC Inc,Finance,Investment Managers,XLF - Financial,,NYSE
+GSK,GSK plc,Health Technology,Pharmaceuticals: Major,XLV - Health Care,,NYSE
+GWRE,Guidewire Software Inc,Technology Services,Packaged Software,XLK - Technology,,NYSE
+GWRS,Global Water Resources Inc,Utilities,Water Utilities,XLU - Utilities,,NGM
+GWW,WW Grainger Inc,Distribution Services,Wholesale Distributors,XLI - Industrials,,NYSE
+HAL,Halliburton Company,Industrial Services,Oilfield Services/Equipment,XLE - Energy,,NYSE
+HAS,Hasbro Inc,Consumer Durables,Recreational Products,XLY - Consumer Discretionary,,NASDAQ
+HBAN,Huntington Bancshares Incorporated,Finance,Regional Banks,XLF - Financial,,NASDAQ
+HCA,HCA Healthcare Inc,Health Services,Hospital/Nursing Management,XLV - Health Care,,NYSE
+HD,The Home Depot Inc,Retail Trade,Home Improvement Chains,XLY - Consumer Discretionary,,NYSE
+HESM,Hess Midstream LP,Industrial Services,Oil & Gas Pipelines,XLE - Energy,,NYSE
+HIG,The Hartford Insurance Group Inc,Finance,Property/Casualty Insurance,XLF - Financial,,NYSE
+HII,Huntington Ingalls Industries Inc,Electronic Technology,Aerospace & Defense,XLI - Industrials,,NYSE
+HIMS,Hims & Hers Health Inc,,Medical/Nursing Services,XLV - Health Care,,NYSE
+HLT,Hilton Worldwide Holdings Inc,Consumer Services,Hotels/Resorts/Cruise lines,XLY - Consumer Discretionary,,NYSE
+HOLX,Hologic Inc,Health Technology,Medical Specialties,XLV - Health Care,,NASDAQ
+HON,Honeywell International Inc,Electronic Technology,Electronic Equipment/Instruments,XLI - Industrials,,NASDAQ
+HOOD,Robinhood Markets Inc,Finance,Investment Banks/Brokers,XLF - Financial,,NASDAQ
+HPE,Hewlett Packard Enterprise Company,Electronic Technology,Computer Processing Hardware,XLK - Technology,,NYSE
+HPQ,HP Inc,Electronic Technology,Computer Processing Hardware,XLK - Technology,,NYSE
+HRL,Hormel Foods Corporation,Consumer Non-durables,Food: Meat/Fish/Dairy,XLP - Consumer Staples,,NYSE
+HSIC,Henry Schein Inc,Distribution Services,Medical Distributors,XLV - Health Care,,NASDAQ
+HST,Host Hotels & Resorts Inc,Finance,Real Estate Investment Trusts,XLRE - Real State,,NASDAQ
+HSY,The Hershey Company,Consumer Non-durables,Food: Specialty/Candy,XLP - Consumer Staples,,NYSE
+HTGC,Hercules Capital Inc,Finance,Investment Managers,XLF - Financial,,NYSE
+HUBB,Hubbell Incorporated,Producer Manufacturing,Electrical Products,XLI - Industrials,,NYSE
+HUM,Humana Inc,Health Services,Managed Health Care,XLV - Health Care,,NYSE
+HWM,Howmet Aerospace Inc,Producer Manufacturing,Aerospace & Defense,XLI - Industrials,,NYSE
+HYLN,Hyliion Holdings Corp,Electronic Technology,Electronic Production Equipment,XLU - Utilities,,AMEX
+IBKR,Interactive Brokers Group Inc,Finance,Investment Banks/Brokers,XLF - Financial,,NASDAQ
+IBM,International Business Machines Corporation,Technology Services,Information Technology Services,XLK - Technology,,NYSE
+ICE,Intercontinental Exchange Inc,Finance,Investment Banks/Brokers,XLF - Financial,,NYSE
+IDXX,IDEXX Laboratories Inc,Health Technology,Health Technology,XLV - Health Care,,NASDAQ
+IESC,IES Holdings Inc,Industrial Services,Engineering & Construction,XLI - Industrials,,NGM
+IEX,IDEX Corporation,Producer Manufacturing,Industrial Machinery,XLI - Industrials,,NYSE
+IFF,International Flavors & Fragrances Inc,Process Industries,Chemicals: Specialty,XLB - Materials,,NYSE
+INCY,Incyte Corporation,Health Technology,Biotechnology,XLV - Health Care,,NASDAQ
+INTC,Intel Corporation,Electronic Technology,Semiconductors,XLK - Technology,,NASDAQ
+INTU,Intuit Inc,Technology Services,Packaged Software,XLK - Technology,,NASDAQ
+INVH,Invitation Homes Inc,Finance,Real Estate Investment Trusts,XLRE - Real State,,NYSE
+IP,International Paper Company,Process Industries,Pulp & Paper,XLB - Materials,,NYSE
+IPG,The Interpublic Group of Companies Inc,Commercial Services,Miscellaneous Commercial Services,XLC - Communication Services,,NYSE
+IQV,IQVIA Holdings Inc,Health Services,Medical/Nursing Services,XLV - Health Care,,NYSE
+IR,Ingersoll Rand Inc,Producer Manufacturing,Industrial Machinery,XLI - Industrials,,NYSE
+IRM,Iron Mountain Incorporated,Finance,Real Estate Investment Trusts,XLRE - Real State,,NYSE
+ISRG,Intuitive Surgical Inc,Health Technology,Medical Specialties,XLV - Health Care,,NASDAQ
+IT,Gartner Inc,Technology Services,Information Technology Services,XLK - Technology,,NYSE
+ITW,Illinois Tool Works Inc,Producer Manufacturing,Industrial Machinery,XLI - Industrials,,NYSE
+IVZ,Invesco Ltd,Finance,Investment Managers,XLF - Financial,,NYSE
+J,Jacobs Solutions Inc,Industrial Services,Engineering & Construction,XLI - Industrials,,NYSE
+JBHT,JB Hunt Transport Services Inc,Transportation,Trucking,XLI - Industrials,,NASDAQ
+JBL,Jabil Inc,Electronic Technology,Electronic Production Equipment,XLK - Technology,,NYSE
+JBLU,JetBlue Airways Corporation,Transportation,Airlines,XLI - Industrials,airlines aviao,NASDAQ
+JCI,Johnson Controls International plc,Producer Manufacturing,Industrial Machinery,XLI - Industrials,,NYSE
+JD,JDcom Inc,Retail Trade,Internet Retail,XLY - Consumer Discretionary,,NASDAQ
+JKHY,Jack Henry & Associates Inc,Technology Services,Data Processing Services,XLF - Financial,,NASDAQ
+JKS,JinkoSolar Holding Co Ltd,Electronic Technology,Electronic Production Equipment,XLU - Utilities,,NYSE
+JNJ,Johnson & Johnson,Health Technology,Pharmaceuticals: Major,XLV - Health Care,,NYSE
+JPM,JPMorgan Chase & Co,Finance,Major Banks,XLF - Financial,,NYSE
+K,Kellanova,Consumer Non-durables,Food: Major Diversified,XLP - Consumer Staples,,NYSE
+KDP,Keurig Dr Pepper Inc,Consumer Non-durables,Beverages: Non-Alcoholic,XLP - Consumer Staples,,NASDAQ
+KEY,KeyCorp,Finance,Regional Banks,XLF - Financial,,NYSE
+KEYS,Keysight Technologies Inc,Electronic Technology,Electronic Equipment/Instruments,XLK - Technology,,NYSE
+KHC,The Kraft Heinz Company,Consumer Non-durables,Food: Major Diversified,XLP - Consumer Staples,,NASDAQ
+KIM,Kimco Realty Corporation,Finance,Real Estate Investment Trusts,XLRE - Real State,,NYSE
+KKR,KKR & Co Inc,Finance,Investment Managers,XLF - Financial,,NYSE
+KLAC,KLA Corporation,Electronic Technology,Electronic Production Equipment,XLK - Technology,,NASDAQ
+KMB,Kimberly-Clark Corporation,Consumer Non-durables,Household/Personal Care,XLP - Consumer Staples,,NASDAQ
+KMI,Kinder Morgan Inc,Industrial Services,Oil & Gas Pipelines,XLE - Energy,,NYSE
+KMX,CarMax Inc,Retail Trade,Specialty Stores,XLY - Consumer Discretionary,,NYSE
+KNTK,Kinetik Holdings Inc,Industrial Services,Oil & Gas Pipelines,XLE - Energy,,NYSE
+KO,The Coca-Cola Company,Consumer Non-durables,Beverages: Non-Alcoholic,XLP - Consumer Staples,,NYSE
+KR,The Kroger Co,Retail Trade,Food Retail,XLP - Consumer Staples,,NYSE
+KVUE,Kenvue Inc,Consumer Non-durables,Household/Personal Care,XLP - Consumer Staples,,NYSE
+L,Loews Corporation,Finance,Financial Conglomerates,XLF - Financial,,NYSE
+LCID,Lucid Group Inc,Consumer Durables,Motor Vehicles,XLY - Consumer Discretionary,,NASDAQ
+LDOS,Leidos Holdings Inc,Technology Services,Information Technology Services,XLI - Industrials,,NYSE
+LEN,Lennar Corporation,Consumer Durables,Homebuilding,XLY - Consumer Discretionary,,NYSE
+LH,Labcorp Holdings Inc,Health Services,Medical/Nursing Services,XLV - Health Care,,NYSE
+LHX,L3Harris Technologies Inc,Electronic Technology,Aerospace & Defense,XLI - Industrials,,NYSE
+LI,Li Auto Inc,Consumer Durables,Motor Vehicles,XLY - Consumer Discretionary,,NASDAQ
+LII,Lennox International Inc,Producer Manufacturing,Industrial Machinery,XLI - Industrials,,NYSE
+LIN,Linde plc,Process Industries,Chemicals: Specialty,XLB - Materials,,NASDAQ
+LKQ,LKQ Corporation,Distribution Services,Wholesale Distributors,XLY - Consumer Discretionary,,NASDAQ
+LLY,Eli Lilly and Company,Health Technology,Pharmaceuticals: Major,XLV - Health Care,,NYSE
+LMT,Lockheed Martin Corporation,Electronic Technology,Aerospace & Defense,XLI - Industrials,,NYSE
+LNT,Alliant Energy Corporation,Utilities,Electric Utilities,XLU - Utilities,,NASDAQ
+LOW,Lowes Companies Inc,Retail Trade,Home Improvement Chains,XLY - Consumer Discretionary,,NYSE
+LRCX,Lam Research Corporation,Electronic Technology,Electronic Production Equipment,XLK - Technology,,NASDAQ
+LULU,lululemon athletica inc,Retail Trade,Apparel/Footwear Retail,XLY - Consumer Discretionary,,NASDAQ
+LUV,Southwest Airlines Co,Transportation,Airlines,XLI - Industrials,airlines aviao,NYSE
+LVS,Las Vegas Sands Corp,Consumer Services,Casinos/Gaming,XLY - Consumer Discretionary,,NYSE
+LW,Lamb Weston Holdings Inc,Consumer Non-durables,Food: Specialty/Candy,XLP - Consumer Staples,,NYSE
+LYB,LyondellBasell Industries NV,Process Industries,Chemicals: Major Diversified,XLB - Materials,,NYSE
+LYV,Live Nation Entertainment Inc,Consumer Services,Other Consumer Services,XLC - Communication Services,,NYSE
+MA,Mastercard Incorporated,Technology Services,Data Processing Services,XLF - Financial,,NYSE
+MAA,Mid-America Apartment Communities Inc,Finance,Real Estate Investment Trusts,XLRE - Real State,,NYSE
+MAIN,Main Street Capital Corporation,Finance,Investment Managers,XLF - Financial,,NYSE
+MAR,Marriott International Inc,Consumer Services,Hotels/Resorts/Cruise lines,XLY - Consumer Discretionary,,NASDAQ
+MAXN,Maxeon Solar Technologies Ltd,Electronic Technology,Electronic Production Equipment,XLU - Utilities,,NASDAQ
+MCD,McDonalds Corporation,Consumer Services,Restaurants,XLY - Consumer Discretionary,,NYSE
+MCHP,Microchip Technology Incorporated,Electronic Technology,Semiconductors,XLK - Technology,,NASDAQ
+MCK,McKesson Corporation,Distribution Services,Medical Distributors,XLV - Health Care,,NYSE
+MCO,Moodys Corporation,Commercial Services,Financial Publishing/Services,XLF - Financial,,NYSE
+MDB,MongoDB Inc,Technology Services,Packaged Software,XLK - Technology,,NGM
+MDLZ,Mondelez International Inc,Consumer Non-durables,Food: Specialty/Candy,XLP - Consumer Staples,,NASDAQ
+MDT,Medtronic plc,Health Technology,Medical Specialties,XLV - Health Care,,NYSE
+MDU,MDU Resources Group Inc,Industrial Services,Engineering & Construction,XLI - Industrials,,NYSE
+MET,MetLife Inc,Finance,Life/Health Insurance,XLF - Financial,,NYSE
+META,Meta Platforms Inc,Technology Services,Internet Software/Services,XLC - Communication Services,,NASDAQ
+MFC,Manulife Financial Corporation,Finance,Life/Health Insurance,XLF - Financial,,NYSE
+MGM,MGM Resorts International,Consumer Services,Casinos/Gaming,XLY - Consumer Discretionary,,NYSE
+MHK,Mohawk Industries Inc,Consumer Durables,Homebuilding,XLY - Consumer Discretionary,,NYSE
+MKC,McCormick & Company Incorporated,Consumer Non-durables,Food: Specialty/Candy,XLP - Consumer Staples,,NYSE
+MKTX,MarketAxess Holdings Inc,Finance,Investment Banks/Brokers,XLF - Financial,,NASDAQ
+MLM,Martin Marietta Materials Inc,Non-energy Minerals,Construction Materials,XLB - Materials,,NYSE
+MMC,Marsh & McLennan Companies Inc,Finance,Insurance Brokers/Services,XLF - Financial,,NYSE
+MMM,3M Company,Producer Manufacturing,Industrial Specialties,XLI - Industrials,,NYSE
+MNST,Monster Beverage Corporation,Consumer Non-durables,Beverages: Non-Alcoholic,XLP - Consumer Staples,,NASDAQ
+MO,Altria Group Inc,Consumer Non-durables,Tobacco,XLP - Consumer Staples,,NYSE
+MOH,Molina Healthcare Inc,Health Services,Managed Health Care,XLV - Health Care,,NYSE
+MOS,The Mosaic Company,Process Industries,Chemicals: Agricultural,XLB - Materials,,NYSE
+MPC,Marathon Petroleum Corporation,Energy Minerals,Oil Refining/Marketing,XLE - Energy,,NYSE
+MPLX,MPLX LP,Industrial Services,Oil & Gas Pipelines,XLE - Energy,,NYSE
+MPWR,Monolithic Power Systems Inc,Electronic Technology,Electronic Production Equipment,XLK - Technology,,NASDAQ
+MRK,Merck & Co Inc,Health Technology,Pharmaceuticals: Major,XLV - Health Care,,NYSE
+MRNA,Moderna Inc,Health Technology,Biotechnology,XLV - Health Care,,NASDAQ
+MRVL,Marvell Technology Inc,Electronic Technology,Semiconductors,XLK - Technology,,NASDAQ
+MS,Morgan Stanley,Finance,Investment Banks/Brokers,XLF - Financial,,NYSE
+MSBI,Midland States Bancorp Inc,Finance,Regional Banks,XLF - Financial,,NASDAQ
+MSCI,MSCI Inc,Commercial Services,Financial Publishing/Services,XLF - Financial,,NYSE
+MSEX,Middlesex Water Company,Utilities,Water Utilities,XLU - Utilities,,NASDAQ
+MSFT,Microsoft Corporation,Technology Services,Packaged Software,XLK - Technology,mag7,NASDAQ
+MSI,Motorola Solutions Inc,Electronic Technology,Electronic Equipment/Instruments,XLI - Industrials,,NYSE
+MTB,M&T Bank Corporation,Finance,Regional Banks,XLF - Financial,,NYSE
+MTCH,Match Group Inc,Technology Services,Internet Software/Services,XLC - Communication Services,,NASDAQ
+MTD,Mettler-Toledo International Inc,Electronic Technology,Electronic Equipment/Instruments,XLV - Health Care,,NYSE
+MTZ,MasTec Inc,Industrial Services,Engineering & Construction,XLI - Industrials,,NYSE
+MU,Micron Technology Inc,Electronic Technology,Semiconductors,XLK - Technology,,NASDAQ
+NCLH,Norwegian Cruise Line Holdings Ltd,Consumer Services,Hotels/Resorts/Cruise lines,XLY - Consumer Discretionary,navio cruzeiro,NYSE
+NDAQ,Nasdaq Inc,Finance,Investment Banks/Brokers,XLF - Financial,,NASDAQ
+NDSN,Nordson Corporation,Producer Manufacturing,Industrial Machinery,XLI - Industrials,,NASDAQ
+NEE,NextEra Energy Inc,Utilities,Electric Utilities,XLU - Utilities,,NYSE
+NEM,Newmont Corporation,Non-energy Minerals,Precious Metals,XLB - Materials,,NYSE
+NET,Cloudflare Inc,Technology Services,Internet Software/Services,XLK - Technology,,NYSE
+NEWT,NewtekOne Inc,Finance,Investment Managers,XLF - Financial,,NGM
+NFG,National Fuel Gas Company,Utilities,Gas Distributors,XLU - Utilities,,NYSE
+NFLX,Netflix Inc,Consumer Services,Movies/Entertainment,XLC - Communication Services,,NASDAQ
+NI,NiSource Inc,Utilities,Electric Utilities,XLU - Utilities,,NYSE
+NIO,NIO Inc,Consumer Durables,Motor Vehicles,XLY - Consumer Discretionary,,NYSE
+NJR,New Jersey Resources Corporation,Utilities,Gas Distributors,XLU - Utilities,,NYSE
+NKE,NIKE Inc,Consumer Non-durables,Apparel/Footwear,XLY - Consumer Discretionary,,NYSE
+NOC,Northrop Grumman Corporation,Electronic Technology,Aerospace & Defense,XLI - Industrials,,NYSE
+NOW,ServiceNow Inc,Technology Services,Packaged Software,XLK - Technology,,NYSE
+NRG,NRG Energy Inc,Utilities,Electric Utilities,XLU - Utilities,,NYSE
+NSC,Norfolk Southern Corporation,Transportation,Railroads,XLI - Industrials,,NYSE
+NSIT,Insight Enterprises Inc,Technology Services,Information Technology Services,XLK - Technology,,NASDAQ
+NTAP,NetApp Inc,Electronic Technology,Computer Processing Hardware,XLK - Technology,,NASDAQ
+NTES,NetEase Inc,Technology Services,Packaged Software,XLC - Communication Services,,NASDAQ
+NTRS,Northern Trust Corporation,Finance,Investment Managers,XLF - Financial,,NASDAQ
+NU,Nu Holdings Ltd Nubank,Financial Services,Major Banks,XLF - Financial,brasil,NYSE
+NUE,Nucor Corporation,Non-energy Minerals,Steel,XLB - Materials,,NYSE
+NVDA,NVIDIA Corporation,Electronic Technology,Semiconductors,XLK - Technology,mag7,NASDAQ
+NVO,Novo Nordisk AS,Health Technology,Pharmaceuticals: Major,XLV - Health Care,,NYSE
+NVR,NVR Inc,Consumer Durables,Homebuilding,XLY - Consumer Discretionary,,NYSE
+NWS,News Corporation,Consumer Services,Broadcasting,XLC - Communication Services,,NASDAQ
+NWSA,News Corporation,Consumer Services,Broadcasting,XLC - Communication Services,,NASDAQ
+NXPI,NXP Semiconductors NV,Electronic Technology,Semiconductors,XLK - Technology,,NASDAQ
+O,Realty Income Corporation,Finance,Real Estate Investment Trusts,XLRE - Real State,,NYSE
+OCCI,OFS Credit Company Inc,Finance,Investment Managers,XLF - Financial,,NGM
+ODFL,Old Dominion Freight Line Inc,Transportation,Trucking,XLI - Industrials,,NASDAQ
+OGS,ONE Gas Inc,Utilities,Gas Distributors,XLU - Utilities,,NYSE
+OKE,ONEOK Inc,Industrial Services,Oil & Gas Pipelines,XLE - Energy,,NYSE
+OKTA,Okta Inc,Technology Services,Packaged Software,XLK - Technology,,NASDAQ
+OMC,Omnicom Group Inc,Commercial Services,Miscellaneous Commercial Services,XLC - Communication Services,,NYSE
+ON,ON Semiconductor Corporation,Electronic Technology,Semiconductors,XLK - Technology,,NASDAQ
+OPEN,OPENDOOR TECHNOLOGIES,Finance,Real State Development,XLRE - Real State,,NASDAQ
+ORCL,Oracle Corporation,Technology Services,Packaged Software,XLK - Technology,,NYSE
+ORLY,OReilly Automotive Inc,Retail Trade,Specialty Stores,XLY - Consumer Discretionary,,NASDAQ
+OTEX,Open Text Corporation,Technology Services,Packaged Software,XLK - Technology,,NASDAQ
+OTIS,Otis Worldwide Corporation,Producer Manufacturing,Industrial Machinery,XLI - Industrials,,NYSE
+OXY,Occidental Petroleum Corporation,Energy Minerals,Oil & Gas Production,XLE - Energy,,NYSE
+PAA,Plains All American Pipeline LP,Industrial Services,Oil & Gas Pipelines,XLE - Energy,,NASDAQ
+PANW,Palo Alto Networks Inc,Technology Services,Packaged Software,XLK - Technology,,NASDAQ
+PAYC,Paycom Software Inc,Technology Services,Packaged Software,XLK - Technology,,NYSE
+PAYX,Paychex Inc,Technology Services,Data Processing Services,XLI - Industrials,,NASDAQ
+PBT,Permian Basin Royalty Trust,Energy Minerals,Oil & Gas Production,XLE - Energy,,NYSE
+PCAR,PACCAR Inc,Producer Manufacturing,Trucks/Construction/Farm Machinery,XLI - Industrials,,NASDAQ
+PCG,PG&E Corporation,Utilities,Electric Utilities,XLU - Utilities,,NYSE
+PDD,PDD Holdings Inc,Retail Trade,Internet Retail,XLY - Consumer Discretionary,,NASDAQ
+PEG,Public Service Enterprise Group Incorporated,Utilities,Electric Utilities,XLU - Utilities,,NYSE
+PEP,PepsiCo Inc,Consumer Non-durables,Beverages: Non-Alcoholic,XLP - Consumer Staples,,NASDAQ
+PFE,Pfizer Inc,Health Technology,Pharmaceuticals: Major,XLV - Health Care,,NYSE
+PFG,Principal Financial Group Inc,Finance,Investment Managers,XLF - Financial,,NASDAQ
+PG,The Procter & Gamble Company,Consumer Non-durables,Household/Personal Care,XLP - Consumer Staples,,NYSE
+PGR,The Progressive Corporation,Finance,Property/Casualty Insurance,XLF - Financial,,NYSE
+PH,Parker-Hannifin Corporation,Producer Manufacturing,Industrial Machinery,XLI - Industrials,,NYSE
+PHM,PulteGroup Inc,Consumer Durables,Homebuilding,XLY - Consumer Discretionary,,NYSE
+PINS,Pinterest Inc,Technology Services,Internet Software/Services,XLC - Communication Services,,NYSE
+PKG,Packaging Corporation of America,Process Industries,Containers/Packaging,XLB - Materials,,NYSE
+PLBY,PLBY Group Inc,Consumer Services,Other Consumer Services,XLC - Communication Services,,NGM
+PLD,Prologis Inc,Finance,Real Estate Investment Trusts,XLRE - Real State,,NYSE
+PLTR,Palantir Technologies Inc,Technology Services,Packaged Software,XLK - Technology,,NASDAQ
+PLUG,Plug Power Inc,Electronic Technology,Electronic Production Equipment,XLU - Utilities,,NCM
+PM,Philip Morris International Inc,Consumer Non-durables,Tobacco,XLP - Consumer Staples,,NYSE
+PNC,The PNC Financial Services Group Inc,Finance,Regional Banks,XLF - Financial,,NYSE
+PNR,Pentair plc,Producer Manufacturing,Industrial Machinery,XLI - Industrials,,NYSE
+PNW,Pinnacle West Capital Corporation,Utilities,Electric Utilities,XLU - Utilities,,NYSE
+PODD,Insulet Corporation,Health Technology,Medical Specialties,XLV - Health Care,,NASDAQ
+POOL,Pool Corporation,Distribution Services,Wholesale Distributors,XLY - Consumer Discretionary,,NASDAQ
+PPG,PPG Industries Inc,Process Industries,Chemicals: Specialty,XLB - Materials,,NYSE
+PPL,PPL Corporation,Utilities,Electric Utilities,XLU - Utilities,,NYSE
+PRIM,Primoris Services Corporation,Industrial Services,Engineering & Construction,XLI - Industrials,,NYSE
+PRLB,Proto Labs Inc,Producer Manufacturing,Industrial Machinery,XLI - Industrials,,NYSE
+PRU,Prudential Financial Inc,Finance,Life/Health Insurance,XLF - Financial,,NYSE
+PSA,Public Storage,Finance,Real Estate Investment Trusts,XLRE - Real State,,NYSE
+PSEC,Prospect Capital Corporation,Finance,Investment Managers,XLF - Financial,,NASDAQ
+PSTG,Pure Storage Inc,Electronic Technology,Computer Processing Hardware,XLK - Technology,,NYSE
+PSX,Phillips 66,Energy Minerals,Oil Refining/Marketing,XLE - Energy,,NYSE
+PTC,PTC Inc,Technology Services,Packaged Software,XLK - Technology,,NASDAQ
+PURE,Pure Cycle Corporation,Utilities,Water Utilities,XLU - Utilities,,OQB
+PWR,Quanta Services Inc,Industrial Services,Engineering & Construction,XLI - Industrials,,NYSE
+PWR,Quanta Services Inc,Industrial Services,Engineering & Construction,XLI - Industrials,,NYSE
+PYPL,PayPal Holdings Inc,Technology Services,Data Processing Services,XLF - Financial,,NASDAQ
+QCOM,QUALCOMM Incorporated,Electronic Technology,Semiconductors,XLK - Technology,,NASDAQ
+QLYS,Qualys Inc,Technology Services,Packaged Software,XLK - Technology,,NASDAQ
+QRVO,Qorvo Inc,Electronic Technology,Semiconductors,XLK - Technology,,NASDAQ
+QSR,Restaurant Brands International Inc,Consumer Services,Restaurants,XLY - Consumer Discretionary,,NYSE
+RBA,RB Global Inc,Producer Manufacturing,Industrial Machinery,XLI - Industrials,,NYSE
+RBLX,Roblox Corporation,Consumer Services,Movies/Entertainment,XLC - Communication Services,,NYSE
+RCL,Royal Caribbean Cruises Ltd,Consumer Services,Hotels/Resorts/Cruise lines,XLY - Consumer Discretionary,navio cruzeiro,NYSE
+REAL,The Real Brokerage Inc,Finance,Real Estate Development,XLRE - Real State,,NASDAQ
+REG,Regency Centers Corporation,Finance,Real Estate Investment Trusts,XLRE - Real State,,NASDAQ
+REGN,Regeneron Pharmaceuticals Inc,Health Technology,Biotechnology,XLV - Health Care,,NASDAQ
+RF,Regions Financial Corporation,Finance,Regional Banks,XLF - Financial,,NYSE
+RIVN,Rivian Automotive Inc,Consumer Durables,Motor Vehicles,XLY - Consumer Discretionary,,NASDAQ
+RJF,Raymond James Financial Inc,Finance,Investment Banks/Brokers,XLF - Financial,,NYSE
+RL,Ralph Lauren Corporation,Consumer Non-durables,Apparel/Footwear,XLY - Consumer Discretionary,,NYSE
+RMD,ResMed Inc,Health Technology,Medical Specialties,XLV - Health Care,,NYSE
+ROAD,Construction Partners Inc,Industrial Services,Engineering & Construction,XLI - Industrials,,NASDAQ
+ROK,Rockwell Automation Inc,Electronic Technology,Electronic Equipment/Instruments,XLI - Industrials,,NYSE
+ROKU,Roku Inc,Consumer Services,Movies/Entertainment,XLC - Communication Services,,NASDAQ
+ROL,Rollins Inc,Commercial Services,Miscellaneous Commercial Services,XLI - Industrials,,NYSE
+ROP,Roper Technologies Inc,Electronic Technology,Electronic Equipment/Instruments,XLI - Industrials,,NASDAQ
+ROST,Ross Stores Inc,Retail Trade,Apparel/Footwear Retail,XLY - Consumer Discretionary,,NASDAQ
+RPD,Rapid7 Inc,Technology Services,Packaged Software,XLK - Technology,,NGM
+RSG,Republic Services Inc,Industrial Services,Environmental Services,XLI - Industrials,,NYSE
+RTX,RTX Corporation,Electronic Technology,Aerospace & Defense,XLI - Industrials,,NYSE
+RUN,Sunrun Inc,Utilities,Electric Utilities,XLU - Utilities,solar,NASDAQ
+RVTY,Revvity Inc,Health Technology,Medical Specialties,XLV - Health Care,,NYSE
+RXO,RXO Inc,Transportation,Trucking,XLI - Industrials,,NYSE
+RY,Royal Bank of Canada,Finance,Major Banks,XLF - Financial,,NYSE
+S,SentinelOne Inc,Technology Services,Packaged Software,XLK - Technology,,NYSE
+SAIA,Saia Inc,Transportation,Trucking,XLI - Industrials,,NASDAQ
+SAIL,SailPoint Technologies Holdings Inc,Technology Services,Packaged Software,XLK - Technology,,NASDAQ
+SAP,SAP SE,Technology Services,Packaged Software,XLK - Technology,,NYSE
+SBAC,SBA Communications Corporation,Finance,Real Estate Investment Trusts,XLRE - Real State,,NASDAQ
+SBUX,Starbucks Corporation,Consumer Services,Restaurants,XLY - Consumer Discretionary,,NASDAQ
+SCHW,The Charles Schwab Corporation,Finance,Investment Banks/Brokers,XLF - Financial,,NYSE
+SEDG,SolarEdge Technologies Inc,Electronic Technology,Electronic Production Equipment,XLU - Utilities,,NASDAQ
+SHEL,Shell plc,Energy Minerals,Integrated Oil,XLE - Energy,,NYSE
+SHOP,Shopify Inc,Technology Services,Internet Software/Services,XLK - Technology,,NASDAQ
+SHW,The Sherwin-Williams Company,Process Industries,Chemicals: Specialty,XLB - Materials,,NYSE
+SJM,The J M Smucker Company,Consumer Non-durables,Food: Major Diversified,XLP - Consumer Staples,,NYSE
+SJT,San Juan Basin Royalty Trust,Energy Minerals,Oil & Gas Production,XLE - Energy,,NYSE
+SKYW,SkyWest Inc,Transportation,Airlines,XLI - Industrials,airlines aviao,NASDAQ
+SLB,Schlumberger Limited,Industrial Services,Oilfield Services/Equipment,XLE - Energy,,NYSE
+SLF,Sun Life Financial Inc,Finance,Life/Health Insurance,XLF - Financial,,NYSE
+SMCI,Super Micro Computer Inc,Electronic Technology,Computer Processing Hardware,XLK - Technology,,NASDAQ
+SNA,Snap-on Incorporated,Producer Manufacturing,Industrial Machinery,XLI - Industrials,,NYSE
+SNAP,Snap Inc,Technology Services,Internet Software/Services,XLC - Communication Services,,NYSE
+SNOW,Snowflake Inc,Technology Services,Packaged Software,XLK - Technology,,NYSE
+SNPS,Synopsys Inc,Technology Services,Packaged Software,XLK - Technology,,NASDAQ
+SNY,Sanofi,Health Technology,Pharmaceuticals: Major,XLV - Health Care,,NASDAQ
+SO,The Southern Company,Utilities,Electric Utilities,XLU - Utilities,,NYSE
+SOFI,SoFi Technologies Inc,Finance,Finance/Rental/Leasing,XLF - Financial,,NASDAQ
+SOL,Renesola Ltd,Electronic Technology,Electronic Production Equipment,XLU - Utilities,,NYSE
+SOLV,Solventum Corporation,Health Technology,Medical Specialties,XLV - Health Care,,NYSE
+SPG,Simon Property Group Inc,Finance,Real Estate Investment Trusts,XLRE - Real State,,NYSE
+SPGI,S&P Global Inc,Commercial Services,Financial Publishing/Services,XLF - Financial,,NYSE
+SPWR,SunPower Corporation,Electronic Technology,Electronic Production Equipment,XLU - Utilities,,NGM
+SRE,Sempra,Utilities,Gas Distributors,XLU - Utilities,,NYSE
+STC,Student Transportation Inc,Transportation,Other Transportation,XLI - Industrials,,NYSE
+STE,STERIS plc,Health Technology,Medical Specialties,XLV - Health Care,,NYSE
+STLD,Steel Dynamics Inc,Non-energy Minerals,Steel,XLB - Materials,,NASDAQ
+STRL,Sterling Construction Company Inc,Industrial Services,Engineering & Construction,XLI - Industrials,,NASDAQ
+STT,State Street Corporation,Finance,Major Banks,XLF - Financial,,NYSE
+STX,Seagate Technology Holdings plc,Electronic Technology,Computer Processing Hardware,XLK - Technology,,NASDAQ
+STZ,Constellation Brands Inc,Consumer Non-durables,Beverages: Alcoholic,XLP - Consumer Staples,,NYSE
+SU,Suncor Energy Inc,Energy Minerals,Oil & Gas Production,XLE - Energy,,NYSE
+SW,Smurfit Westrock Plc,Process Industries,Containers/Packaging,XLB - Materials,,NYSE
+SWK,Stanley Black & Decker Inc,Producer Manufacturing,Industrial Machinery,XLY - Consumer Discretionary,,NYSE
+SWKS,Skyworks Solutions Inc,Electronic Technology,Semiconductors,XLK - Technology,,NASDAQ
+SWX,Southwest Gas Holdings Inc,Utilities,Gas Distributors,XLU - Utilities,,NYSE
+SYF,Synchrony Financial,Finance,Finance/Rental/Leasing,XLF - Financial,,NYSE
+SYK,Stryker Corporation,Health Technology,Medical Specialties,XLV - Health Care,,NYSE
+SYY,Sysco Corporation,Distribution Services,Food Distributors,XLP - Consumer Staples,,NYSE
+T,AT&T Inc,Communications,Major Telecommunications,XLC - Communication Services,,NYSE
+TAP,Molson Coors Beverage Company,Consumer Non-durables,Beverages: Alcoholic,XLP - Consumer Staples,,NYSE
+TCEHY,Tencent Holdings Limited,Technology Services,Internet Software/Services,XLC - Communication Services,,PNK
+TD,The Toronto-Dominion Bank,Finance,Major Banks,XLF - Financial,,NYSE
+TDG,TransDigm Group Incorporated,Electronic Technology,Aerospace & Defense,XLI - Industrials,,NYSE
+TDY,Teledyne Technologies Incorporated,Electronic Technology,Electronic Equipment/Instruments,XLK - Technology,,NYSE
+TEAM,Atlassian Corporation Plc,Technology Services,Packaged Software,XLK - Technology,,NASDAQ
+TECH,Bio-Techne Corporation,Health Technology,Biotechnology,XLV - Health Care,,NASDAQ
+TEL,TE Connectivity plc,Electronic Technology,Electronic Components,XLK - Technology,,NYSE
+TENB,Tenable Holdings Inc,Technology Services,Packaged Software,XLK - Technology,,NASDAQ
+TER,Teradyne Inc,Electronic Technology,Electronic Production Equipment,XLK - Technology,,NASDAQ
+TFC,Truist Financial Corporation,Finance,Regional Banks,XLF - Financial,,NYSE
+TFI,TFI International Inc,Transportation,Trucking,XLI - Industrials,,PCX
+TGT,Target Corporation,Retail Trade,Department Stores,XLP - Consumer Staples,,NYSE
+TJX,The TJX Companies Inc,Retail Trade,Apparel/Footwear Retail,XLY - Consumer Discretionary,,NYSE
+TKO,TKO Group Holdings Inc,Consumer Services,Movies/Entertainment,XLC - Communication Services,,NYSE
+TM,Toyota Motor Corporation,Consumer Durables,Motor Vehicles,XLY - Consumer Discretionary,,NYSE
+TMO,Thermo Fisher Scientific Inc,Health Technology,Medical Specialties,XLV - Health Care,,NYSE
+TMUS,T-Mobile US Inc,Communications,Wireless Telecommunications,XLC - Communication Services,,NASDAQ
+TPL,Texas Pacific Land Corporation,Energy Minerals,Oil & Gas Production,XLE - Energy,,NYSE
+TPR,Tapestry Inc,Consumer Non-durables,Apparel/Footwear,XLY - Consumer Discretionary,,NYSE
+TRGP,Targa Resources Corp,Industrial Services,Oil & Gas Pipelines,XLE - Energy,,NYSE
+TRI,Thomson Reuters Corporation,Technology Services,Information Technology Services,XLC - Communication Services,,NASDAQ
+TRMB,Trimble Inc,Electronic Technology,Electronic Equipment/Instruments,XLK - Technology,,NASDAQ
+TROW,T Rowe Price Group Inc,Finance,Investment Managers,XLF - Financial,,NASDAQ
+TRV,The Travelers Companies Inc,Finance,Property/Casualty Insurance,XLF - Financial,,NYSE
+TSCO,Tractor Supply Company,Retail Trade,Specialty Stores,XLY - Consumer Discretionary,,NASDAQ
+TSLA,Tesla Inc,Consumer Durables,Motor Vehicles,XLY - Consumer Discretionary,mag7,NASDAQ
+TSLX,Sixth Street Specialty Lending Inc,Finance,Investment Managers,XLF - Financial,,NYSE
+TSM,Taiwan Semiconductor Manufacturing Company Limited,Electronic Technology,Semiconductors,XLK - Technology,,NYSE
+TSN,Tyson Foods Inc,Consumer Non-durables,Food: Meat/Fish/Dairy,XLP - Consumer Staples,,NYSE
+TT,Trane Technologies plc,Producer Manufacturing,Industrial Machinery,XLI - Industrials,,NYSE
+TTD,The Trade Desk Inc,Technology Services,Internet Software/Services,XLC - Communication Services,,NGM
+TTE,TotalEnergies SE,Energy Minerals,Integrated Oil,XLE - Energy,,NYSE
+TTWO,Take-Two Interactive Software Inc,Technology Services,Packaged Software,XLC - Communication Services,,NASDAQ
+TWLO,Twilio Inc,Technology Services,Internet Software/Services,XLK - Technology,,NYSE
+TXN,Texas Instruments Incorporated,Electronic Technology,Semiconductors,XLK - Technology,,NASDAQ
+TXT,Textron Inc,Electronic Technology,Aerospace & Defense,XLI - Industrials,,NYSE
+TYL,Tyler Technologies Inc,Technology Services,Packaged Software,XLK - Technology,,NYSE
+U,Unity Software Inc,Technology Services,Packaged Software,XLK - Technology,,NYSE
+UAL,United Airlines Holdings Inc,Transportation,Airlines,XLI - Industrials,airlines,NASDAQ
+UBER,Uber Technologies Inc,Technology Services,Other Transportation,XLI - Industrials,,NYSE
+UDR,UDR Inc,Finance,Real Estate Investment Trusts,XLRE - Real State,,NYSE
+UGI,UGI Corporation,Utilities,Gas Distributors,XLU - Utilities,,NYSE
+UHS,Universal Health Services Inc,Health Services,Hospital/Nursing Management,XLV - Health Care,,NYSE
+UL,Unilever PLC,Consumer Non-durables,Household/Personal Care,XLP - Consumer Staples,,NYSE
+ULTA,Ulta Beauty Inc,Retail Trade,Specialty Stores,XLY - Consumer Discretionary,,NASDAQ
+UNH,UnitedHealth Group Incorporated,Health Services,Managed Health Care,XLV - Health Care,,NYSE
+UNP,Union Pacific Corporation,Transportation,Railroads,XLI - Industrials,,NYSE
+UPS,United Parcel Service Inc,Transportation,Air Freight/Couriers,XLI - Industrials,,NYSE
+UPST,Upstart Holdings Inc,Finance,Finance/Rental/Leasing,XLF - Financial,,NASDAQ
+URA,URA - Global X Uranium ETF,ETF,Exchange Traded Fund,XLB - Materials,"urânio, mineração",PCX
+URI,United Rentals Inc,Commercial Services,Miscellaneous Commercial Services,XLI - Industrials,,NYSE
+USAC,USA Compression Partners LP,Industrial Services,Oil & Gas Pipelines,XLE - Energy,,NYSE
+USB,US Bancorp,Finance,Regional Banks,XLF - Financial,,NYSE
+USFD,US Foods Holding Corp,Distribution Services,Food Distributors,XLP - Consumer Staples,,NYSE
+V,Visa Inc,Technology Services,Data Processing Services,XLF - Financial,,NYSE
+VEEV,Veeva Systems Inc,Technology Services,Packaged Software,XLV - Health Care,,NYSE
+VICI,VICI Properties Inc,Finance,Real Estate Investment Trusts,XLRE - Real State,,NYSE
+VLO,Valero Energy Corporation,Energy Minerals,Oil Refining/Marketing,XLE - Energy,,NYSE
+VLTO,Veralto Corporation,Health Technology,Medical Specialties,XLV - Health Care,,NYSE
+VMC,Vulcan Materials Company,Non-energy Minerals,Construction Materials,XLB - Materials,,NYSE
+VOC,VOC Energy Trust,Energy Minerals,Oil & Gas Production,XLE - Energy,,NYSE
+VRNS,Varonis Systems Inc,Technology Services,Packaged Software,XLK - Technology,,NASDAQ
+VRSK,Verisk Analytics Inc,Commercial Services,Financial Publishing/Services,XLF - Financial,,NASDAQ
+VRSN,VeriSign Inc,Technology Services,Internet Software/Services,XLK - Technology,,NASDAQ
+VRTX,Vertex Pharmaceuticals Incorporated,Health Technology,Biotechnology,XLV - Health Care,,NASDAQ
+VST,Vistra Corp,Utilities,Electric Utilities,XLU - Utilities,,NYSE
+VTR,Ventas Inc,Finance,Real Estate Investment Trusts,XLRE - Real State,,NYSE
+VTRS,Viatris Inc,Health Technology,Pharmaceuticals: Major,XLV - Health Care,,NASDAQ
+VZ,Verizon Communications Inc,Communications,Major Telecommunications,XLC - Communication Services,,NYSE
+WAB,Westinghouse Air Brake Technologies Corporation,Producer Manufacturing,Industrial Machinery,XLI - Industrials,,NYSE
+WAT,Waters Corporation,Health Technology,Medical Specialties,XLV - Health Care,,NYSE
+WBA,Walgreens Boots Alliance Inc,Health Services,Medical/Nursing Services,XLV - Health Care,,NASDAQ
+WBD,Warner Bros Discovery Inc,Consumer Services,Movies/Entertainment,XLC - Communication Services,,NASDAQ
+WCN,Waste Connections Inc,Industrial Services,Environmental Services,XLI - Industrials,,NYSE
+WDAY,Workday Inc,Technology Services,Packaged Software,XLK - Technology,,NASDAQ
+WDC,Western Digital Corporation,Electronic Technology,Computer Processing Hardware,XLK - Technology,,NASDAQ
+WEC,WEC Energy Group Inc,Utilities,Electric Utilities,XLU - Utilities,,NYSE
+WELL,Welltower Inc,Finance,Real Estate Investment Trusts,XLRE - Real State,,NYSE
+WES,Western Midstream Partners LP,Industrial Services,Oil & Gas Pipelines,XLE - Energy,,NYSE
+WFC,Wells Fargo & Company,Finance,Major Banks,XLF - Financial,,NYSE
+WM,Waste Management Inc,Industrial Services,Environmental Services,XLI - Industrials,,NYSE
+WMB,The Williams Companies Inc,Industrial Services,Oil & Gas Pipelines,XLE - Energy,,NYSE
+WMT,Walmart Inc,Retail Trade,Food Retail,XLP - Consumer Staples,,NYSE
+WPM,Wheaton Precious Metals Corp,Non-energy Minerals,Precious Metals,XLB - Materials,,NYSE
+WRB,W R Berkley Corporation,Finance,Property/Casualty Insurance,XLF - Financial,,NYSE
+WSM,Williams-Sonoma Inc,Retail Trade,Specialty Stores,XLY - Consumer Discretionary,,NYSE
+WSO,Watsco Inc,Distribution Services,Wholesale Distributors,XLI - Industrials,,NYSE
+WST,West Pharmaceutical Services Inc,Health Technology,Medical Specialties,XLV - Health Care,,NYSE
+WTW,Willis Towers Watson Public Limited Company,Finance,Insurance Brokers/Services,XLF - Financial,,NASDAQ
+WY,Weyerhaeuser Company,Finance,Real Estate Investment Trusts,XLRE - Real State,,NYSE
+WYNN,Wynn Resorts Limited,Consumer Services,Casinos/Gaming,XLY - Consumer Discretionary,,NASDAQ
+XEL,Xcel Energy Inc,Utilities,Electric Utilities,XLU - Utilities,,NASDAQ
+XOM,Exxon Mobil Corporation,Energy Minerals,Integrated Oil,XLE - Energy,,NYSE
+XPEV,XPeng Inc,Consumer Durables,Motor Vehicles,XLY - Consumer Discretionary,,NYSE
+XYL,Xylem Inc,Producer Manufacturing,Industrial Machinery,XLI - Industrials,,NYSE
+XYZ,Block Inc,Technology Services,Data Processing Services,XLF - Financial,,NYSE
+YORW,York Water Company,Utilities,Water Utilities,XLU - Utilities,,NASDAQ
+YUM,Yum Brands Inc,Consumer Services,Restaurants,XLY - Consumer Discretionary,,NYSE
+ZBH,Zimmer Biomet Holdings Inc,Health Technology,Medical Specialties,XLV - Health Care,,NYSE
+ZBRA,Zebra Technologies Corporation,Electronic Technology,Electronic Equipment/Instruments,XLK - Technology,,NASDAQ
+ZM,Zoom Video Communications Inc,Technology Services,Internet Software/Services,XLK - Technology,,NASDAQ
+ZS,Zscaler Inc,Technology Services,Packaged Software,XLK - Technology,,NASDAQ
+ZTS,Zoetis Inc,Health Technology,Pharmaceuticals: Major,XLV - Health Care,,NYSE
