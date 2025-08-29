@@ -143,7 +143,12 @@ def main():
 
     if st.button("🚀 Rodar Scanner"):
         results = []
-        for symbol in SYMBOLS:
+
+        # Barra de progresso discreta
+        progress_bar = st.progress(0)
+        status_text = st.empty()
+
+        for i, symbol in enumerate(SYMBOLS):
             df = get_stock_data(symbol)
             if df is None or len(df) < 3:
                 continue
@@ -168,6 +173,15 @@ def main():
                     "Change%": f"{info['setup_change']:.2f}%",
                     "Day%": f"{info['day_change']:.2f}%"
                 })
+
+            # Atualizar progresso
+            progress = (i + 1) / len(SYMBOLS)
+            progress_bar.progress(progress)
+            status_text.text(f"⏳ Processando {i+1}/{len(SYMBOLS)} símbolos...")
+
+        # Limpar barra no final
+        progress_bar.empty()
+        status_text.empty()
 
         if results:
             df_results = pd.DataFrame(results)
