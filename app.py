@@ -65,7 +65,6 @@ def detect_inside_bar(df):
         return True, {
             "type": "Inside Bar",
             "price": current["Close"],
-            "setup_change": ((current["Close"] - current["Open"]) / current["Open"]) * 100,
             "day_change": ((current["Close"] - current["Open"]) / current["Open"]) * 100
         }
     return False, None
@@ -88,7 +87,6 @@ def detect_hammer_setup(df):
         return True, {
             "type": "Hammer Setup",
             "price": current["Close"],
-            "setup_change": ((current["Close"] - current["Low"]) / current["Low"]) * 100,
             "day_change": ((current["Close"] - current["Open"]) / current["Open"]) * 100
         }
     return False, None
@@ -96,7 +94,12 @@ def detect_hammer_setup(df):
 @st.cache_data(ttl=3600)
 def get_stock_data(symbol, period="1y", interval="1d"):
     try:
-        df = yf.Ticker(symbol).history(period=period, interval=interval)
+        df = yf.download(
+            symbol,
+            period=period,
+            interval=interval,
+            auto_adjust=False   # 🔹 garante OHLC real, sem ajuste
+        )
         return df if not df.empty else None
     except:
         return None
@@ -160,7 +163,6 @@ def main():
                     "Symbol": symbol,
                     "Setup": info["type"],
                     "Price": f"${info['price']:.2f}",
-                    "Change%": f"{info['setup_change']:.2f}%",
                     "Day%": f"{info['day_change']:.2f}%"
                 })
                 continue
@@ -171,7 +173,6 @@ def main():
                     "Symbol": symbol,
                     "Setup": info["type"],
                     "Price": f"${info['price']:.2f}",
-                    "Change%": f"{info['setup_change']:.2f}%",
                     "Day%": f"{info['day_change']:.2f}%"
                 })
 
