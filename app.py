@@ -72,16 +72,27 @@ def ensure_ohlc(df):
     if isinstance(df.columns, pd.MultiIndex):
         df.columns = [c[0] for c in df.columns]
     keep_cols = [c for c in ["Open","High","Low","Close"] if c in df.columns]
-    return df[keep_cols]
+    df = df[keep_cols]
+    df = df.dropna()
+    df = df[~df.index.duplicated(keep="last")].sort_index()
+    return df
 
 def detect_strat(df):
     """Detecta setups TheStrat na última vela"""
+    if df is None or len(df) < 2:
+        return None
+
+    df = ensure_ohlc(df)
     if len(df) < 2:
         return None
-    
+
     c, p = df.iloc[-1], df.iloc[-2]
-    c_high, c_low = float(c["High"]), float(c["Low"])
-    p_high, p_low = float(p["High"]), float(p["Low"])
+
+    try:
+        c_high, c_low = float(c["High"]), float(c["Low"])
+        p_high, p_low = float(p["High"]), float(p["Low"])
+    except Exception:
+        return None
 
     if c_high < p_high and c_low > p_low:
         return "1"   # Inside bar
@@ -95,12 +106,15 @@ def detect_strat(df):
 
 def calc_atr(df, period=14):
     """Calcula ATR"""
+    df = ensure_ohlc(df)
+    if df.empty: 
+        return None
     df["H-L"] = df["High"] - df["Low"]
     df["H-C"] = abs(df["High"] - df["Close"].shift())
     df["L-C"] = abs(df["Low"] - df["Close"].shift())
     tr = df[["H-L", "H-C", "L-C"]].max(axis=1)
     atr = tr.rolling(period).mean()
-    return atr.iloc[-1]
+    return atr.iloc[-1] if not atr.empty else None
 
 def load_symbols():
     data = worksheet.get_all_records()
@@ -147,14 +161,12 @@ def main():
             data_qtr = data_mo.resample("Q").agg({
                 "Open":"first","High":"max","Low":"min","Close":"last"
             })
-            data_qtr = ensure_ohlc(data_qtr)
             setup_qtr = detect_strat(data_qtr)
 
             # Year
             data_yr = data_mo.resample("Y").agg({
                 "Open":"first","High":"max","Low":"min","Close":"last"
             })
-            data_yr = ensure_ohlc(data_yr)
             setup_yr = detect_strat(data_yr)
 
             last_price = float(data_day["Close"].iloc[-1])
