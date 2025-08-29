@@ -159,13 +159,19 @@ def main():
 
             # Qtr
             data_qtr = data_mo.resample("Q").agg({
-                "Open":"first","High":"max","Low":"min","Close":"last"
+                "Open": lambda x: x.iloc[0],
+                "High": "max",
+                "Low": "min",
+                "Close": lambda x: x.iloc[-1]
             })
             setup_qtr = detect_strat(data_qtr)
 
             # Year
             data_yr = data_mo.resample("Y").agg({
-                "Open":"first","High":"max","Low":"min","Close":"last"
+                "Open": lambda x: x.iloc[0],
+                "High": "max",
+                "Low": "min",
+                "Close": lambda x: x.iloc[-1]
             })
             setup_yr = detect_strat(data_yr)
 
