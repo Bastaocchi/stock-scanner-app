@@ -1,6 +1,7 @@
 import streamlit as st
 import yfinance as yf
 import pandas as pd
+import time
 
 # =========================
 # CONFIGURAÇÃO DA PÁGINA
@@ -174,12 +175,13 @@ def main():
                     "Day%": f"{info['day_change']:.2f}%"
                 })
 
-            # Atualizar progresso + setups
+            # Atualizar progresso + setups em tempo real
             progress = (i + 1) / len(SYMBOLS)
             progress_bar.progress(progress)
             status_text.text(
                 f"⏳ Processando {i+1}/{len(SYMBOLS)} símbolos... | 🎯 {len(results)} setups encontrados"
             )
+            time.sleep(0.05)  # permite a UI atualizar
 
         # Limpar barra no final
         progress_bar.empty()
