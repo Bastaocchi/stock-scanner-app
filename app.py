@@ -46,12 +46,6 @@ td {
 }
 tr:nth-child(odd) { background-color: #15191f !important; }
 tr:nth-child(even) { background-color: #1b1f24 !important; }
-th:nth-child(1), td:nth-child(1) { width: 120px !important; }
-th:nth-child(2), td:nth-child(2) { width: 200px !important; }
-th:nth-child(3), td:nth-child(3) { width: 150px !important; }
-th:nth-child(4), td:nth-child(4) { width: 150px !important; }
-th:nth-child(5), td:nth-child(5) { width: 150px !important; }
-th:nth-child(6), td:nth-child(6) { width: 150px !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -105,8 +99,8 @@ def detect_2down_green_monthly(df):
             df["date"] = pd.to_datetime(df["date"])
             df = df.set_index("date")
 
-    # 🔹 Padronizar nomes das colunas para minúsculo
-    df.columns = [c.lower() for c in df.columns]
+    # 🔹 Forçar nomes para string minúscula
+    df.columns = [str(c).lower() for c in df.columns]
 
     # 🔹 Se não existir 'close', usar 'adj close'
     if "close" not in df.columns and "adj close" in df.columns:
@@ -122,7 +116,8 @@ def detect_2down_green_monthly(df):
         "open": "first",
         "high": "max",
         "low": "min",
-        "close": "last"
+        "close": "last",
+        "volume": "sum"
     })
 
     if len(df_monthly) < 2:
@@ -140,16 +135,26 @@ def detect_2down_green_monthly(df):
     low_prev, high_prev = float(previous["low"]), float(previous["high"])
 
     # 📌 Condições TheStrat
-    broke_down = low_curr < low_prev        # rompeu mínima anterior
-    closed_green = close_curr > open_curr   # candle verde
-    no_break_high = high_curr < high_prev   # não rompeu máxima anterior
+    broke_down = low_curr < low_prev
+    closed_green = close_curr > open_curr
+    no_break_high = high_curr < high_prev
 
-    if broke_down and closed_green and no_break_high:
+    is_2d_green = broke_down and closed_green and no_break_high
+
+    if is_2d_green:
+        # métricas adicionais
+        break_amount = low_prev - low_curr
+        break_pct = (break_amount / low_prev) * 100 if low_prev else 0
+        monthly_recovery = ((close_curr - low_curr) / low_curr) * 100 if low_curr else 0
+        monthly_change = ((close_curr - open_curr) / open_curr) * 100 if open_curr else 0
+
         return True, {
             "type": "2Down Green Monthly",
-            "price": close_curr,
+            "price": round(close_curr, 2),
             "day_change": ((close_curr - open_curr) / open_curr) * 100,
-            "valid": valid_flag
+            "valid": valid_flag,
+            "break_pct": round(break_pct, 2),
+            "monthly_change_pct": round(monthly_change, 2)
         }
     return False, None
 
@@ -247,7 +252,9 @@ def main():
                         "day%": f"{info['day_change']:.2f}%",
                         "valid": info["valid"],
                         "sector_spdr": df_symbols.loc[df_symbols["symbols"] == symbol, "sector_spdr"].values[0] if "sector_spdr" in df_symbols else "",
-                        "tags": df_symbols.loc[df_symbols["symbols"] == symbol, "tags"].values[0] if "tags" in df_symbols else ""
+                        "tags": df_symbols.loc[df_symbols["symbols"] == symbol, "tags"].values[0] if "tags" in df_symbols else "",
+                        "break_pct": info.get("break_pct", ""),
+                        "monthly_change_pct": info.get("monthly_change_pct", "")
                     }
                     results.append(row)
 
