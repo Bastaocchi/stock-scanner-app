@@ -140,6 +140,86 @@ def detect_inside_bar(df):
     return False, None
 
 
+def detect_2down_green_3m(df):
+    """
+    Detecta 2Down Green 3M (trimestral):
+    - Vela atual rompeu mínima da vela anterior (low_atual < low_anterior)
+    - Vela atual está verde (close_atual > open_atual)
+    - Vela atual NÃO rompeu máxima da vela anterior (high_atual < high_anterior)
+    """
+    if df is None or df.empty:
+        return False, None
+
+    try:
+        df_norm = normalize_dataframe(df)
+        if df_norm is None:
+            return False, None
+
+        # Garante que o índice é datetime
+        if not isinstance(df_norm.index, pd.DatetimeIndex):
+            df_norm = df_norm.reset_index()
+            if 'date' in df_norm.columns:
+                df_norm['date'] = pd.to_datetime(df_norm['date'])
+                df_norm = df_norm.set_index('date')
+            else:
+                # Se não há coluna de data, usa o índice atual como data
+                df_norm.index = pd.to_datetime(df_norm.index)
+
+        # Cria dados trimestrais (3M)
+        df_quarterly = df_norm.resample('3M').agg({
+            'open': 'first',
+            'high': 'max',
+            'low': 'min',
+            'close': 'last',
+            'volume': 'sum' if 'volume' in df_norm.columns else lambda x: 0
+        }).dropna()
+
+        if len(df_quarterly) < 2:  # Precisamos de pelo menos 2 barras trimestrais
+            return False, None
+
+        # Analisa as últimas 2 barras trimestrais
+        current = df_quarterly.iloc[-1]   # Barra atual (em andamento)
+        previous = df_quarterly.iloc[-2]  # Barra anterior
+
+        open_curr, high_curr, low_curr, close_curr, valid_flag = fix_candle(
+            float(current["open"]),
+            float(current["high"]),
+            float(current["low"]),
+            float(current["close"])
+        )
+        
+        high_prev = float(previous["high"])
+        low_prev = float(previous["low"])
+
+        # Condições do 2Down Green 3M
+        rompeu_minima = low_curr < low_prev           # 1. Rompeu mínima anterior
+        fechou_verde = close_curr > open_curr         # 2. Fechou verde
+        nao_rompeu_maxima = high_curr < high_prev     # 3. NÃO rompeu máxima anterior
+
+        if rompeu_minima and fechou_verde and nao_rompeu_maxima:
+            break_amount = low_prev - low_curr
+            break_pct = (break_amount / low_prev) * 100 if low_prev > 0 else 0
+            quarterly_change = ((close_curr - open_curr) / open_curr) * 100 if open_curr != 0 else 0
+
+            return True, {
+                "type": "2Down Green 3M",
+                "price": round(close_curr, 2),
+                "day_change": quarterly_change,
+                "valid": valid_flag,
+                "break_pct": round(break_pct, 2),
+                "quarterly_change_pct": round(quarterly_change, 2),
+                "rompeu_minima": rompeu_minima,
+                "fechou_verde": fechou_verde,
+                "nao_rompeu_maxima": nao_rompeu_maxima
+            }
+
+    except Exception as e:
+        st.error(f"Erro no 2Down Green 3M: {e}")
+        return False, None
+
+    return False, None
+
+
 def detect_2down_green_monthly(df):
     """
     Detecta 2Down Green Monthly:
@@ -320,14 +400,16 @@ def main():
 
     setor_filter = col1.selectbox("📌 Setor", setores)
     tag_filter = col2.selectbox("🏷️ Tag", tags)
-    timeframe_filter = col3.selectbox("⏳ Timeframe", ["Daily", "Weekly", "Monthly"])
+    timeframe_filter = col3.selectbox("⏳ Timeframe", ["Daily", "Weekly", "Monthly", "Quarterly"])
 
     if timeframe_filter == "Daily":
         setup_filter = col4.selectbox("⚡ Setup", ["Inside Bar"])
     elif timeframe_filter == "Weekly":
         setup_filter = col4.selectbox("⚡ Setup", ["Inside Bar"])
-    else:  # Monthly
+    elif timeframe_filter == "Monthly":
         setup_filter = col4.selectbox("⚡ Setup", ["Inside Bar", "2Down Green Monthly"])
+    else:  # Quarterly
+        setup_filter = col4.selectbox("⚡ Setup", ["Inside Bar", "2Down Green 3M"])
 
     # =========================
     # BOTÃO SCANNER
@@ -378,6 +460,20 @@ def main():
                     elif setup_filter == "2Down Green Monthly":
                         found, info = detect_2down_green_monthly(df)
 
+                elif timeframe_filter == "Quarterly":
+                    if setup_filter == "Inside Bar":
+                        df_norm = normalize_dataframe(df)
+                        if df_norm is not None:
+                            df_quarterly = df_norm.resample("3M").agg({
+                                "open": "first",
+                                "high": "max",
+                                "low": "min",
+                                "close": "last"
+                            }).dropna()
+                            found, info = detect_inside_bar(df_quarterly)
+                    elif setup_filter == "2Down Green 3M":
+                        found, info = detect_2down_green_3m(df)
+
                 if found and info:
                     # Busca informações adicionais do símbolo
                     symbol_row = df_symbols[df_symbols["symbols"] == symbol]
@@ -397,10 +493,13 @@ def main():
                         if "tags" in df_symbols.columns:
                             row["tags"] = symbol_row["tags"].values[0]
 
-                    # Adiciona informações específicas do 2Down Green Monthly
-                    if setup_filter == "2Down Green Monthly" and "break_pct" in info:
+                    # Adiciona informações específicas dos setups 2Down Green
+                    if setup_filter in ["2Down Green Monthly", "2Down Green 3M"] and "break_pct" in info:
                         row["break%"] = f"{info['break_pct']:.2f}%"
-                        row["monthly%"] = f"{info['monthly_change_pct']:.2f}%"
+                        if setup_filter == "2Down Green Monthly":
+                            row["monthly%"] = f"{info['monthly_change_pct']:.2f}%"
+                        else:  # 2Down Green 3M
+                            row["quarterly%"] = f"{info['quarterly_change_pct']:.2f}%"
 
                     results.append(row)
 
