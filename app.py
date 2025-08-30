@@ -51,12 +51,25 @@ th:nth-child(2), td:nth-child(2) { width: 200px !important; }
 th:nth-child(3), td:nth-child(3) { width: 150px !important; }
 th:nth-child(4), td:nth-child(4) { width: 150px !important; }
 th:nth-child(5), td:nth-child(5) { width: 150px !important; }
+th:nth-child(6), td:nth-child(6) { width: 150px !important; }
 </style>
 """, unsafe_allow_html=True)
 
 # =========================
 # FUNÇÕES DE SCAN
 # =========================
+def fix_candle(open_p, high_p, low_p, close_p):
+    """Corrige candles incoerentes do Yahoo (Open > High ou Open < Low)."""
+    valid_flag = "OK"
+    if open_p > high_p:
+        high_p = open_p
+        valid_flag = "Adjusted"
+    if open_p < low_p:
+        low_p = open_p
+        valid_flag = "Adjusted"
+    return open_p, high_p, low_p, close_p, valid_flag
+
+
 def detect_inside_bar(df):
     if len(df) < 2:
         return False, None
@@ -64,15 +77,20 @@ def detect_inside_bar(df):
     current = df.iloc[-1]
     previous = df.iloc[-2]
 
-    high_curr, low_curr = float(current["High"]), float(current["Low"])
+    open_curr, high_curr, low_curr, close_curr, valid_flag = fix_candle(
+        float(current["Open"]),
+        float(current["High"]),
+        float(current["Low"]),
+        float(current["Close"])
+    )
     high_prev, low_prev = float(previous["High"]), float(previous["Low"])
-    open_curr, close_curr = float(current["Open"]), float(current["Close"])
 
     if high_curr < high_prev and low_curr > low_prev:
         return True, {
             "type": "Inside Bar",
             "price": close_curr,
-            "day_change": ((close_curr - open_curr) / open_curr) * 100
+            "day_change": ((close_curr - open_curr) / open_curr) * 100,
+            "valid": valid_flag
         }
     return False, None
 
@@ -84,8 +102,12 @@ def detect_hammer_setup(df):
     current = df.iloc[-1]
     previous = df.iloc[-2]
 
-    open_curr, close_curr = float(current["Open"]), float(current["Close"])
-    high_curr, low_curr = float(current["High"]), float(current["Low"])
+    open_curr, high_curr, low_curr, close_curr, valid_flag = fix_candle(
+        float(current["Open"]),
+        float(current["High"]),
+        float(current["Low"]),
+        float(current["Close"])
+    )
     low_prev = float(previous["Low"])
 
     body_size = abs(close_curr - open_curr)
@@ -103,7 +125,8 @@ def detect_hammer_setup(df):
         return True, {
             "type": "Hammer Setup",
             "price": close_curr,
-            "day_change": ((close_curr - open_curr) / open_curr) * 100
+            "day_change": ((close_curr - open_curr) / open_curr) * 100,
+            "valid": valid_flag
         }
     return False, None
 
@@ -183,7 +206,8 @@ def main():
                     "Symbol": symbol,
                     "Setup": info["type"],
                     "Price": f"${info['price']:.2f}",
-                    "Day%": f"{info['day_change']:.2f}%"
+                    "Day%": f"{info['day_change']:.2f}%",
+                    "Valid": info["valid"]
                 })
                 continue
 
@@ -193,7 +217,8 @@ def main():
                     "Symbol": symbol,
                     "Setup": info["type"],
                     "Price": f"${info['price']:.2f}",
-                    "Day%": f"{info['day_change']:.2f}%"
+                    "Day%": f"{info['day_change']:.2f}%",
+                    "Valid": info["valid"]
                 })
 
             # Atualizar progresso + setups em tempo real
