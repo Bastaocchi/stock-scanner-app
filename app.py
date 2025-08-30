@@ -258,8 +258,8 @@ def detect_2down_green_3m(df):
             else:
                 df_norm.index = pd.to_datetime(df_norm.index)
 
-        # Cria dados trimestrais (3M)
-        df_quarterly = df_norm.resample('3M').agg({
+        # Usa QE (Quarter End) em vez de 3M para trimestres corretos do calendário
+        df_quarterly = df_norm.resample('QE').agg({
             'open': 'first',
             'high': 'max',
             'low': 'min',
@@ -270,9 +270,20 @@ def detect_2down_green_3m(df):
         if len(df_quarterly) < 2:
             return False, None
 
-        # Analisa as últimas 2 barras trimestrais
-        current = df_quarterly.iloc[-1]   # Barra atual (em andamento)
-        previous = df_quarterly.iloc[-2]  # Barra anterior
+        # Pega apenas trimestres COMPLETOS (não o trimestre em andamento)
+        today = pd.Timestamp.now()
+        # Determina o fim do trimestre atual
+        current_quarter_end = pd.Timestamp(today.year, ((today.month - 1) // 3 + 1) * 3, 1) + pd.offsets.MonthEnd(0)
+        
+        # Remove o trimestre atual se ainda estamos nele (barra incompleta)
+        df_quarterly_complete = df_quarterly[df_quarterly.index < current_quarter_end]
+        
+        if len(df_quarterly_complete) < 2:
+            return False, None
+
+        # Analisa as últimas 2 barras trimestrais COMPLETAS
+        current = df_quarterly_complete.iloc[-1]   # Última barra completa
+        previous = df_quarterly_complete.iloc[-2]  # Barra anterior
 
         open_curr, high_curr, low_curr, close_curr, valid_flag = fix_candle(
             float(current["open"]),
@@ -474,7 +485,8 @@ def main():
                     if setup_filter == "Inside Bar":
                         df_norm = normalize_dataframe(df)
                         if df_norm is not None:
-                            df_quarterly = df_norm.resample("3M").agg({
+                            # Usa QE (Quarter End) para trimestres corretos do calendário
+                            df_quarterly = df_norm.resample("QE").agg({
                                 "open": "first",
                                 "high": "max",
                                 "low": "min",
