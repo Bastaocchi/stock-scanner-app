@@ -241,40 +241,34 @@ def get_stock_data(symbol, period="2y", interval="1d"):
 
 
 @st.cache_data(ttl=3600)
-def load_symbols():
-    """Carrega símbolos do arquivo local, com fallback para GitHub"""
+def load_symbols_local():
+    """Carrega símbolos do arquivo local symbols.csv"""
     try:
-        # 🔹 Primeiro tenta carregar local
-        df = pd.read_csv("symbols.csv", sep=None, engine="python")
-        df.columns = df.columns.str.strip().str.lower()
-
-        # Normalizar coluna de símbolos
-        if "symbols" in df.columns:
-            df["symbols"] = df["symbols"].astype(str).str.strip()
-        elif "symbol" in df.columns:
-            df["symbols"] = df["symbol"].astype(str).str.strip()
-        else:
-            raise ValueError("CSV precisa ter coluna 'symbols' ou 'symbol'")
-
-        # Remover só linhas realmente vazias
-        df = df[df["symbols"] != ""]
+        # Tenta carregar o arquivo local primeiro
+        df = pd.read_csv("symbols.csv")
         return df
-
-    except Exception as e:
-        st.warning(f"⚠️ Erro ao carregar symbols.csv local ({e}), tentando GitHub...")
-
+    except FileNotFoundError:
+        st.warning("📁 Arquivo 'symbols.csv' não encontrado localmente. Tentando carregar do GitHub...")
         try:
+            # Fallback para GitHub se não encontrar local
             url = "https://raw.githubusercontent.com/Bastaocchi/stock-scanner-app/main/symbols.csv"
             df = pd.read_csv(url)
-            df.columns = df.columns.str.strip().str.lower()
             return df
-        except Exception as e2:
-            st.error(f"❌ Erro ao carregar símbolos do GitHub: {e2}")
+        except Exception as e:
+            st.error(f"Erro ao carregar símbolos do GitHub: {e}")
+            # Retorna uma lista padrão em caso de erro
             return pd.DataFrame({
                 'symbols': ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA'],
                 'sector_spdr': ['Technology', 'Technology', 'Technology', 'Consumer Discretionary', 'Consumer Discretionary'],
                 'tags': ['Large Cap', 'Large Cap', 'Large Cap', 'Large Cap', 'Large Cap']
             })
+    except Exception as e:
+        st.error(f"Erro ao ler arquivo symbols.csv: {e}")
+        return pd.DataFrame({
+            'symbols': ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA'],
+            'sector_spdr': ['Technology', 'Technology', 'Technology', 'Consumer Discretionary', 'Consumer Discretionary'],
+            'tags': ['Large Cap', 'Large Cap', 'Large Cap', 'Large Cap', 'Large Cap']
+        })
 
 
 def render_results_table(df):
@@ -305,9 +299,9 @@ def main():
     st.markdown('<h2 style="color:#ccc;">🎯 Scanner de Setups (Estilo Gerenciador)</h2>', unsafe_allow_html=True)
 
     try:
-        df_symbols = load_symbols_from_github()
+        df_symbols = load_symbols_local()
         df_symbols.columns = df_symbols.columns.str.strip().str.lower()
-        st.info(f"✅ Carregados {len(df_symbols)} símbolos do GitHub")
+        st.info(f"✅ Carregados {len(df_symbols)} símbolos do arquivo local")
     except Exception as e:
         st.error(f"Erro ao carregar símbolos: {e}")
         return
