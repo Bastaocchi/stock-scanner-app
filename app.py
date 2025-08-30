@@ -1,4 +1,17 @@
-import streamlit as st
+# Condições do 2Down Green Monthly
+        rompeu_minima = low_curr < low_prev           # 1. Rompeu mínima anterior
+        fechou_verde = close_curr > open_curr         # 2. Fechou verde (close > open)
+        nao_rompeu_maxima = high_curr < high_prev     # 3. NÃO rompeu máxima anterior
+
+        # DEBUG TEMPORÁRIO - para identificar problema
+        if rompeu_minima and fechou_verde and nao_rompeu_maxima:
+            st.write(f"🚨 DEBUG {current.name.strftime('%Y-%m') if hasattr(current, 'name') else 'N/A'}:")
+            st.write(f"   Current:  O={open_curr:.2f} H={high_curr:.2f} L={low_curr:.2f} C={close_curr:.2f}")
+            st.write(f"   Previous: H={high_prev:.2f} L={low_prev:.2f}")
+            st.write(f"   ✅ Rompeu mínima: {low_curr:.2f} < {low_prev:.2f} = {rompeu_minima}")
+            st.write(f"   ✅ Fechou verde: {close_curr:.2f} > {open_curr:.2f} = {fechou_verde}")
+            st.write(f"   ✅ Não rompeu máxima: {high_curr:.2f} < {high_prev:.2f} = {nao_rompeu_maxima}")
+            st.write("---")import streamlit as st
 import yfinance as yf
 import pandas as pd
 import time
@@ -242,10 +255,9 @@ def detect_2down_green_monthly(df):
                 df_norm['date'] = pd.to_datetime(df_norm['date'])
                 df_norm = df_norm.set_index('date')
             else:
-                # Se não há coluna de data, usa o índice atual como data
                 df_norm.index = pd.to_datetime(df_norm.index)
 
-        # Cria dados mensais
+        # Cria dados mensais - usando último dia útil de cada mês
         df_monthly = df_norm.resample('M').agg({
             'open': 'first',
             'high': 'max',
@@ -254,12 +266,22 @@ def detect_2down_green_monthly(df):
             'volume': 'sum' if 'volume' in df_norm.columns else lambda x: 0
         }).dropna()
 
-        if len(df_monthly) < 2:  # Precisamos de pelo menos 2 barras mensais
+        if len(df_monthly) < 2:
             return False, None
 
-        # Analisa as últimas 2 barras mensais
-        current = df_monthly.iloc[-1]   # Barra atual (em andamento)
-        previous = df_monthly.iloc[-2]  # Barra anterior
+        # Pega apenas barras mensais COMPLETAS (não o mês em andamento)
+        today = pd.Timestamp.now()
+        current_month_start = today.replace(day=1)
+        
+        # Remove o mês atual se ainda estamos nele (barra incompleta)
+        df_monthly_complete = df_monthly[df_monthly.index < current_month_start]
+        
+        if len(df_monthly_complete) < 2:
+            return False, None
+
+        # Analisa as últimas 2 barras mensais COMPLETAS
+        current = df_monthly_complete.iloc[-1]   # Última barra completa
+        previous = df_monthly_complete.iloc[-2]  # Barra anterior
 
         open_curr, high_curr, low_curr, close_curr, valid_flag = fix_candle(
             float(current["open"]),
@@ -271,10 +293,19 @@ def detect_2down_green_monthly(df):
         high_prev = float(previous["high"])
         low_prev = float(previous["low"])
 
+        # DEBUG - vamos imprimir os valores para análise
+        # st.write(f"DEBUG Monthly - Current: O={open_curr:.2f} H={high_curr:.2f} L={low_curr:.2f} C={close_curr:.2f}")
+        # st.write(f"DEBUG Monthly - Previous: H={high_prev:.2f} L={low_prev:.2f}")
+
         # Condições do 2Down Green Monthly
         rompeu_minima = low_curr < low_prev           # 1. Rompeu mínima anterior
         fechou_verde = close_curr > open_curr         # 2. Fechou verde
         nao_rompeu_maxima = high_curr < high_prev     # 3. NÃO rompeu máxima anterior
+
+        # DEBUG
+        # st.write(f"DEBUG - Rompeu mínima: {rompeu_minima} ({low_curr:.2f} < {low_prev:.2f})")
+        # st.write(f"DEBUG - Fechou verde: {fechou_verde} ({close_curr:.2f} > {open_curr:.2f})")
+        # st.write(f"DEBUG - Não rompeu máxima: {nao_rompeu_maxima} ({high_curr:.2f} < {high_prev:.2f})")
 
         if rompeu_minima and fechou_verde and nao_rompeu_maxima:
             break_amount = low_prev - low_curr
@@ -290,7 +321,9 @@ def detect_2down_green_monthly(df):
                 "monthly_change_pct": round(monthly_change, 2),
                 "rompeu_minima": rompeu_minima,
                 "fechou_verde": fechou_verde,
-                "nao_rompeu_maxima": nao_rompeu_maxima
+                "nao_rompeu_maxima": nao_rompeu_maxima,
+                "current_date": current.name.strftime('%Y-%m') if hasattr(current, 'name') else 'N/A',
+                "previous_date": previous.name.strftime('%Y-%m') if hasattr(previous, 'name') else 'N/A'
             }
 
     except Exception as e:
