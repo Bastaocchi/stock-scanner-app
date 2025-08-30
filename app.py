@@ -89,6 +89,7 @@ def detect_inside_bar(df):
 
 
 def detect_2down_green_monthly(df):
+    """Detecta 2Down Green Monthly (barra em andamento)"""
     if df is None or df.empty:
         return False, None
 
@@ -99,7 +100,6 @@ def detect_2down_green_monthly(df):
             df = df.set_index("date")
 
     df.columns = [str(c).lower() for c in df.columns]
-
     if "close" not in df.columns and "adj close" in df.columns:
         df["close"] = df["adj close"]
 
@@ -118,8 +118,8 @@ def detect_2down_green_monthly(df):
     if len(df_monthly) < 2:
         return False, None
 
-    current = df_monthly.iloc[-1]
-    previous = df_monthly.iloc[-2]
+    current = df_monthly.iloc[-1]   # 🔹 barra mensal atual (em andamento)
+    previous = df_monthly.iloc[-2]  # 🔹 barra mensal anterior
 
     open_curr, high_curr, low_curr, close_curr, valid_flag = fix_candle(
         float(current["open"]),
@@ -127,15 +127,12 @@ def detect_2down_green_monthly(df):
         float(current["low"]),
         float(current["close"])
     )
-    low_prev, high_prev = float(previous["low"]), float(previous["high"])
+    low_prev = float(previous["low"])
 
-    broke_down = low_curr < low_prev
-    closed_green = close_curr > open_curr
-    no_break_high = high_curr < high_prev
+    broke_down = low_curr < low_prev          # rompeu mínima anterior
+    closed_green = close_curr > open_curr     # está verde agora
 
-    is_2d_green = broke_down and closed_green and no_break_high
-
-    if is_2d_green:
+    if broke_down and closed_green:
         break_amount = low_prev - low_curr
         break_pct = (break_amount / low_prev) * 100 if low_prev else 0
         monthly_change = ((close_curr - open_curr) / open_curr) * 100 if open_curr else 0
@@ -148,6 +145,7 @@ def detect_2down_green_monthly(df):
             "break_pct": round(break_pct, 2),
             "monthly_change_pct": round(monthly_change, 2)
         }
+
     return False, None
 
 
@@ -204,13 +202,7 @@ def main():
     setor_filter = col1.selectbox("📌 Setor", setores)
     tag_filter = col2.selectbox("🏷️ Tag", tags)
     timeframe_filter = col3.selectbox("⏳ Timeframe", ["Daily", "Weekly", "Monthly"])
-
-    if timeframe_filter == "Daily":
-        setup_filter = col4.selectbox("⚡ Setup", ["Inside Bar"])
-    elif timeframe_filter == "Weekly":
-        setup_filter = col4.selectbox("⚡ Setup", ["Inside Bar"])
-    else:
-        setup_filter = col4.selectbox("⚡ Setup", ["Inside Bar", "2Down Green"])
+    setup_filter = col4.selectbox("⚡ Setup", ["Inside Bar", "2Down Green Monthly"])
 
     # =========================
     # BOTÃO SCANNER
@@ -229,22 +221,18 @@ def main():
 
             found, info = False, None
 
-            if timeframe_filter == "Daily":
-                if setup_filter == "Inside Bar":
+            if setup_filter == "Inside Bar":
+                if timeframe_filter == "Daily":
                     found, info = detect_inside_bar(df)
-
-            elif timeframe_filter == "Weekly":
-                df_weekly = df.resample("W").agg({
-                    "Open": "first",
-                    "High": "max",
-                    "Low": "min",
-                    "Close": "last"
-                })
-                if setup_filter == "Inside Bar":
+                elif timeframe_filter == "Weekly":
+                    df_weekly = df.resample("W").agg({
+                        "Open": "first",
+                        "High": "max",
+                        "Low": "min",
+                        "Close": "last"
+                    })
                     found, info = detect_inside_bar(df_weekly)
-
-            elif timeframe_filter == "Monthly":
-                if setup_filter == "Inside Bar":
+                elif timeframe_filter == "Monthly":
                     df_monthly = df.resample("M").agg({
                         "Open": "first",
                         "High": "max",
@@ -252,8 +240,9 @@ def main():
                         "Close": "last"
                     })
                     found, info = detect_inside_bar(df_monthly)
-                elif setup_filter == "2Down Green":
-                    found, info = detect_2down_green_monthly(df)
+
+            elif setup_filter == "2Down Green Monthly":
+                found, info = detect_2down_green_monthly(df)
 
             if found:
                 row = {
@@ -266,7 +255,7 @@ def main():
                     "tags": df_symbols.loc[df_symbols["symbols"] == symbol, "tags"].values[0] if "tags" in df_symbols else ""
                 }
 
-                if setup_filter == "2Down Green" and info:
+                if setup_filter == "2Down Green Monthly" and info:
                     row["break_pct"] = info.get("break_pct", "")
                     row["monthly_change_pct"] = info.get("monthly_change_pct", "")
 
