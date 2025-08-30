@@ -69,8 +69,46 @@ def fix_candle(open_p, high_p, low_p, close_p):
     return open_p, high_p, low_p, close_p, valid_flag
 
 
+def normalize_dataframe(df):
+    """
+    Normaliza o DataFrame do yfinance para garantir que as colunas OHLC existam
+    """
+    # Se o DataFrame tem MultiIndex nas colunas, flatten elas
+    if isinstance(df.columns, pd.MultiIndex):
+        df.columns = [col[0] if col[1] == '' else col[0] for col in df.columns.values]
+    
+    # Mapear possíveis variações de nomes de colunas
+    column_mapping = {}
+    for col in df.columns:
+        col_lower = str(col).lower()
+        if 'open' in col_lower:
+            column_mapping[col] = 'Open'
+        elif 'high' in col_lower:
+            column_mapping[col] = 'High'
+        elif 'low' in col_lower:
+            column_mapping[col] = 'Low'
+        elif 'close' in col_lower:
+            column_mapping[col] = 'Close'
+        elif 'volume' in col_lower:
+            column_mapping[col] = 'Volume'
+    
+    # Renomear as colunas
+    df = df.rename(columns=column_mapping)
+    
+    return df
+
+
 def detect_inside_bar(df):
     if len(df) < 2:
+        return False, None
+
+    # Normalizar DataFrame
+    df = normalize_dataframe(df)
+    
+    # Verificar se as colunas necessárias existem
+    required_cols = ["Open", "High", "Low", "Close"]
+    if not all(col in df.columns for col in required_cols):
+        print(f"❌ Colunas necessárias não encontradas. Disponíveis: {df.columns.tolist()}")
         return False, None
 
     current = df.iloc[-1]
@@ -95,57 +133,87 @@ def detect_inside_bar(df):
 
 
 def detect_2down_green_monthly(df):
-    # 🔹 Resample para candles mensais
-    df_monthly = df.resample("M").agg({
-        "Open": "first",
-        "High": "max",
-        "Low": "min",
-        "Close": "last"
-    })
-
-    if len(df_monthly) < 2:
+    # Normalizar DataFrame
+    df = normalize_dataframe(df)
+    
+    # Verificar se as colunas necessárias existem
+    required_cols = ["Open", "High", "Low", "Close"]
+    if not all(col in df.columns for col in required_cols):
+        print(f"❌ Colunas necessárias não encontradas. Disponíveis: {df.columns.tolist()}")
         return False, None
+    
+    try:
+        # 🔹 Resample para candles mensais
+        df_monthly = df.resample("M").agg({
+            "Open": "first",
+            "High": "max",
+            "Low": "min",
+            "Close": "last"
+        })
 
-    current = df_monthly.iloc[-1]
-    previous = df_monthly.iloc[-2]
+        if len(df_monthly) < 2:
+            return False, None
 
-    open_curr, high_curr, low_curr, close_curr, valid_flag = fix_candle(
-        float(current["Open"]),
-        float(current["High"]),
-        float(current["Low"]),
-        float(current["Close"])
-    )
-    low_prev, high_prev = float(previous["Low"]), float(previous["High"])
+        current = df_monthly.iloc[-1]
+        previous = df_monthly.iloc[-2]
 
-    # 📌 Condições TheStrat
-    broke_down = low_curr < low_prev        # rompeu mínima anterior
-    closed_green = close_curr > open_curr   # candle verde
-    no_break_high = high_curr < high_prev   # não rompeu máxima anterior
+        open_curr, high_curr, low_curr, close_curr, valid_flag = fix_candle(
+            float(current["Open"]),
+            float(current["High"]),
+            float(current["Low"]),
+            float(current["Close"])
+        )
+        low_prev, high_prev = float(previous["Low"]), float(previous["High"])
 
-    if broke_down and closed_green and no_break_high:
-        return True, {
-            "type": "2Down Green Monthly",
-            "price": close_curr,
-            "day_change": ((close_curr - open_curr) / open_curr) * 100,
-            "valid": valid_flag
-        }
-    return False, None
+        # 📌 Condições TheStrat
+        broke_down = low_curr < low_prev        # rompeu mínima anterior
+        closed_green = close_curr > open_curr   # candle verde
+        no_break_high = high_curr < high_prev   # não rompeu máxima anterior
+
+        if broke_down and closed_green and no_break_high:
+            return True, {
+                "type": "2Down Green Monthly",
+                "price": close_curr,
+                "day_change": ((close_curr - open_curr) / open_curr) * 100,
+                "valid": valid_flag
+            }
+        return False, None
+    
+    except Exception as e:
+        print(f"❌ Erro no 2down_green_monthly: {e}")
+        return False, None
 
 
 @st.cache_data(ttl=3600)
 def get_stock_data(symbol, period="1y", interval="1d"):
     try:
+        # Adicionar .SA se não tiver sufixo (para ações brasileiras)
+        if not any(suffix in symbol for suffix in ['.SA', '.TO', '.L', '.DE']):
+            symbol = symbol + '.SA'
+            
         df = yf.download(symbol, period=period, interval=interval, auto_adjust=False)
-        return df if not df.empty else None
-    except:
+        
+        if df.empty:
+            return None
+            
+        # Normalizar o DataFrame imediatamente após o download
+        df = normalize_dataframe(df)
+        
+        return df
+    except Exception as e:
+        print(f"❌ Erro ao baixar dados para {symbol}: {e}")
         return None
 
 
 @st.cache_data(ttl=3600)
 def load_symbols_from_github():
-    url = "https://raw.githubusercontent.com/Bastaocchi/stock-scanner-app/main/symbols.csv"
-    df = pd.read_csv(url)
-    return df
+    try:
+        url = "https://raw.githubusercontent.com/Bastaocchi/stock-scanner-app/main/symbols.csv"
+        df = pd.read_csv(url)
+        return df
+    except Exception as e:
+        st.error(f"❌ Erro ao carregar símbolos do GitHub: {e}")
+        return pd.DataFrame()
 
 
 def render_results_table(df):
@@ -171,6 +239,11 @@ def main():
 
     # Carregar lista de símbolos do GitHub
     df_symbols = load_symbols_from_github()
+    
+    if df_symbols.empty:
+        st.error("❌ Não foi possível carregar a lista de símbolos.")
+        return
+    
     df_symbols.columns = df_symbols.columns.str.strip().str.lower()
 
     st.info(f"✅ Carregados {len(df_symbols)} símbolos do GitHub")
@@ -180,8 +253,8 @@ def main():
     # =========================
     col1, col2, col3, col4 = st.columns([1,1,1,2])
 
-    setores = ["Todos"] + sorted(df_symbols["sector_spdr"].dropna().unique().tolist()) if "sector_spdr" in df_symbols else ["Todos"]
-    tags = ["Todos"] + sorted(df_symbols["tags"].dropna().unique().tolist()) if "tags" in df_symbols else ["Todos"]
+    setores = ["Todos"] + sorted(df_symbols["sector_spdr"].dropna().unique().tolist()) if "sector_spdr" in df_symbols.columns else ["Todos"]
+    tags = ["Todos"] + sorted(df_symbols["tags"].dropna().unique().tolist()) if "tags" in df_symbols.columns else ["Todos"]
 
     setor_filter = col1.selectbox("📌 Setor", setores)
     tag_filter = col2.selectbox("🏷️ Tag", tags)
@@ -196,27 +269,39 @@ def main():
         progress_bar = st.progress(0)
         status_text = st.empty()
 
-        SYMBOLS = df_symbols["symbols"].dropna().tolist()
+        SYMBOLS = df_symbols["symbols"].dropna().tolist() if "symbols" in df_symbols.columns else []
+        
+        if not SYMBOLS:
+            st.error("❌ Nenhum símbolo encontrado na lista.")
+            return
 
         for i, symbol in enumerate(SYMBOLS):
-            df = get_stock_data(symbol)
-            if df is None or len(df) < 3:
-                continue
+            try:
+                df = get_stock_data(symbol)
+                if df is None or len(df) < 3:
+                    continue
 
-            found, info = detect_inside_bar(df)
-            if found:
-                row = {"symbol": symbol, "setup": info["type"], "price": f"${info['price']:.2f}", "day%": f"{info['day_change']:.2f}%", "valid": info["valid"]}
-                extra = df_symbols[df_symbols["symbols"] == symbol].iloc[0].to_dict()
-                row.update(extra)
-                results.append(row)
-            else:
-                found, info = detect_2down_green_monthly(df)
+                # Tentar Inside Bar primeiro
+                found, info = detect_inside_bar(df)
                 if found:
                     row = {"symbol": symbol, "setup": info["type"], "price": f"${info['price']:.2f}", "day%": f"{info['day_change']:.2f}%", "valid": info["valid"]}
                     extra = df_symbols[df_symbols["symbols"] == symbol].iloc[0].to_dict()
                     row.update(extra)
                     results.append(row)
+                else:
+                    # Se não for Inside Bar, tentar 2Down Green Monthly
+                    found, info = detect_2down_green_monthly(df)
+                    if found:
+                        row = {"symbol": symbol, "setup": info["type"], "price": f"${info['price']:.2f}", "day%": f"{info['day_change']:.2f}%", "valid": info["valid"]}
+                        extra = df_symbols[df_symbols["symbols"] == symbol].iloc[0].to_dict()
+                        row.update(extra)
+                        results.append(row)
 
+            except Exception as e:
+                print(f"❌ Erro processando {symbol}: {e}")
+                continue
+
+            # Atualizar progresso
             progress = (i + 1) / len(SYMBOLS)
             progress_bar.progress(progress)
             status_text.text(f"⏳ {i+1}/{len(SYMBOLS)} símbolos... | 🎯 {len(results)} setups")
@@ -227,9 +312,10 @@ def main():
         if results:
             df_results = pd.DataFrame(results)
 
-            if setor_filter != "Todos":
+            # Aplicar filtros
+            if setor_filter != "Todos" and "sector_spdr" in df_results.columns:
                 df_results = df_results[df_results["sector_spdr"] == setor_filter]
-            if tag_filter != "Todos":
+            if tag_filter != "Todos" and "tags" in df_results.columns:
                 df_results = df_results[df_results["tags"] == tag_filter]
             if setup_filter != "Todos":
                 df_results = df_results[df_results["setup"] == setup_filter]
@@ -237,7 +323,11 @@ def main():
                 mask = df_results.apply(lambda row: row.astype(str).str.contains(search_filter, case=False).any(), axis=1)
                 df_results = df_results[mask]
 
-            render_results_table(df_results)
+            if len(df_results) > 0:
+                st.success(f"🎯 {len(df_results)} setup(s) encontrado(s)")
+                render_results_table(df_results)
+            else:
+                st.warning("❌ Nenhum setup encontrado após aplicar filtros.")
         else:
             st.warning("❌ Nenhum setup encontrado.")
 
