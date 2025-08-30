@@ -125,7 +125,7 @@ def render_results_table(df):
         html_table += f"<tr style='background-color:{bg_color};'>"
         for col in df.columns:
             value = str(row[col]) if pd.notna(row[col]) else ""
-            color = "#ffcc00" if col == "Setup" else "#eee"
+            color = "#ffcc00" if col == "setup" else "#eee"
             html_table += f"<td style='color:{color};'>{value}</td>"
         html_table += "</tr>"
     html_table += "</table>"
@@ -140,7 +140,9 @@ def main():
 
     # Carregar lista de símbolos do GitHub
     df_symbols = load_symbols_from_github()
-    df_symbols.columns = df_symbols.columns.str.strip()
+
+    # 🔹 Normalizar colunas para lowercase
+    df_symbols.columns = df_symbols.columns.str.strip().str.lower()
 
     st.info(f"✅ Carregados {len(df_symbols)} símbolos do GitHub")
 
@@ -149,9 +151,24 @@ def main():
     # =========================
     col1, col2, col3, col4 = st.columns([1,1,1,2])
 
-    setor_filter = col1.selectbox("📌 Setor", ["Todos"] + sorted(df_symbols["Sector_SPDR"].dropna().unique().tolist()))
-    tag_filter = col2.selectbox("🏷️ Tag", ["Todos"] + sorted(df_symbols["Tags"].dropna().unique().tolist()))
+    # Filtro por setor
+    if "sector_spdr" in df_symbols.columns:
+        setores = ["Todos"] + sorted(df_symbols["sector_spdr"].dropna().unique().tolist())
+    else:
+        setores = ["Todos"]
+    setor_filter = col1.selectbox("📌 Setor", setores)
+
+    # Filtro por tag
+    if "tags" in df_symbols.columns:
+        tags = ["Todos"] + sorted(df_symbols["tags"].dropna().unique().tolist())
+    else:
+        tags = ["Todos"]
+    tag_filter = col2.selectbox("🏷️ Tag", tags)
+
+    # Setup
     setup_filter = col3.selectbox("⚡ Setup", ["Todos", "Inside Bar", "2Down Green Monthly"])
+
+    # Busca global
     search_filter = col4.text_input("🔍 Busca global")
 
     # =========================
@@ -162,7 +179,7 @@ def main():
         progress_bar = st.progress(0)
         status_text = st.empty()
 
-        SYMBOLS = df_symbols["Symbol"].dropna().tolist()
+        SYMBOLS = df_symbols["symbols"].dropna().tolist()
 
         for i, symbol in enumerate(SYMBOLS):
             df = get_stock_data(symbol)
@@ -173,15 +190,15 @@ def main():
             found, info = detect_inside_bar(df)
             if found:
                 row = {
-                    "Symbol": symbol,
-                    "Setup": info["type"],
-                    "Price": f"${info['price']:.2f}",
-                    "Day%": f"{info['day_change']:.2f}%",
-                    "Valid": info["valid"]
+                    "symbol": symbol,
+                    "setup": info["type"],
+                    "price": f"${info['price']:.2f}",
+                    "day%": f"{info['day_change']:.2f}%",
+                    "valid": info["valid"]
                 }
 
                 # adicionar colunas extras vindas do CSV
-                extra = df_symbols[df_symbols["Symbol"] == symbol].iloc[0].to_dict()
+                extra = df_symbols[df_symbols["symbols"] == symbol].iloc[0].to_dict()
                 row.update(extra)
                 results.append(row)
 
@@ -200,11 +217,11 @@ def main():
             # APLICAR FILTROS
             # =========================
             if setor_filter != "Todos":
-                df_results = df_results[df_results["Sector_SPDR"] == setor_filter]
+                df_results = df_results[df_results["sector_spdr"] == setor_filter]
             if tag_filter != "Todos":
-                df_results = df_results[df_results["Tags"] == tag_filter]
+                df_results = df_results[df_results["tags"] == tag_filter]
             if setup_filter != "Todos":
-                df_results = df_results[df_results["Setup"] == setup_filter]
+                df_results = df_results[df_results["setup"] == setup_filter]
             if search_filter:
                 mask = df_results.apply(lambda row: row.astype(str).str.contains(search_filter, case=False).any(), axis=1)
                 df_results = df_results[mask]
