@@ -92,26 +92,21 @@ def detect_2down_green_monthly(df):
     if df is None or df.empty:
         return False, None
 
-    # 🔹 Garantir índice datetime
     if not isinstance(df.index, pd.DatetimeIndex):
         df = df.reset_index()
         if "date" in df.columns:
             df["date"] = pd.to_datetime(df["date"])
             df = df.set_index("date")
 
-    # 🔹 Forçar nomes para string minúscula
     df.columns = [str(c).lower() for c in df.columns]
 
-    # 🔹 Se não existir 'close', usar 'adj close'
     if "close" not in df.columns and "adj close" in df.columns:
         df["close"] = df["adj close"]
 
-    # 🔹 Verificar se temos todas as OHLC
     required = {"open", "high", "low", "close"}
     if not required.issubset(df.columns):
         return False, None
 
-    # 🔹 Resample para candles mensais
     df_monthly = df.resample("M").agg({
         "open": "first",
         "high": "max",
@@ -134,7 +129,6 @@ def detect_2down_green_monthly(df):
     )
     low_prev, high_prev = float(previous["low"]), float(previous["high"])
 
-    # 📌 Condições TheStrat
     broke_down = low_curr < low_prev
     closed_green = close_curr > open_curr
     no_break_high = high_curr < high_prev
@@ -142,10 +136,8 @@ def detect_2down_green_monthly(df):
     is_2d_green = broke_down and closed_green and no_break_high
 
     if is_2d_green:
-        # métricas adicionais
         break_amount = low_prev - low_curr
         break_pct = (break_amount / low_prev) * 100 if low_prev else 0
-        monthly_recovery = ((close_curr - low_curr) / low_curr) * 100 if low_curr else 0
         monthly_change = ((close_curr - open_curr) / open_curr) * 100 if open_curr else 0
 
         return True, {
@@ -196,7 +188,6 @@ def render_results_table(df):
 def main():
     st.markdown('<h2 style="color:#ccc;">🎯 Scanner de Setups (Estilo Gerenciador)</h2>', unsafe_allow_html=True)
 
-    # Carregar lista de símbolos do GitHub
     df_symbols = load_symbols_from_github()
     df_symbols.columns = df_symbols.columns.str.strip().str.lower()
 
@@ -212,8 +203,14 @@ def main():
 
     setor_filter = col1.selectbox("📌 Setor", setores)
     tag_filter = col2.selectbox("🏷️ Tag", tags)
-    setup_filter = col3.selectbox("⚡ Setup", ["Todos", "Inside Bar", "2Down Green Monthly"])
-    search_filter = col4.text_input("🔍 Busca global")
+    timeframe_filter = col3.selectbox("⏳ Timeframe", ["Daily", "Weekly", "Monthly"])
+
+    if timeframe_filter == "Daily":
+        setup_filter = col4.selectbox("⚡ Setup", ["Inside Bar"])
+    elif timeframe_filter == "Weekly":
+        setup_filter = col4.selectbox("⚡ Setup", ["Inside Bar"])
+    else:
+        setup_filter = col4.selectbox("⚡ Setup", ["Inside Bar", "2Down Green"])
 
     # =========================
     # BOTÃO SCANNER
@@ -230,7 +227,34 @@ def main():
             if df is None or len(df) < 3:
                 continue
 
-            found, info = detect_inside_bar(df)
+            found, info = False, None
+
+            if timeframe_filter == "Daily":
+                if setup_filter == "Inside Bar":
+                    found, info = detect_inside_bar(df)
+
+            elif timeframe_filter == "Weekly":
+                df_weekly = df.resample("W").agg({
+                    "Open": "first",
+                    "High": "max",
+                    "Low": "min",
+                    "Close": "last"
+                })
+                if setup_filter == "Inside Bar":
+                    found, info = detect_inside_bar(df_weekly)
+
+            elif timeframe_filter == "Monthly":
+                if setup_filter == "Inside Bar":
+                    df_monthly = df.resample("M").agg({
+                        "Open": "first",
+                        "High": "max",
+                        "Low": "min",
+                        "Close": "last"
+                    })
+                    found, info = detect_inside_bar(df_monthly)
+                elif setup_filter == "2Down Green":
+                    found, info = detect_2down_green_monthly(df)
+
             if found:
                 row = {
                     "symbol": symbol,
@@ -241,22 +265,12 @@ def main():
                     "sector_spdr": df_symbols.loc[df_symbols["symbols"] == symbol, "sector_spdr"].values[0] if "sector_spdr" in df_symbols else "",
                     "tags": df_symbols.loc[df_symbols["symbols"] == symbol, "tags"].values[0] if "tags" in df_symbols else ""
                 }
+
+                if setup_filter == "2Down Green" and info:
+                    row["break_pct"] = info.get("break_pct", "")
+                    row["monthly_change_pct"] = info.get("monthly_change_pct", "")
+
                 results.append(row)
-            else:
-                found, info = detect_2down_green_monthly(df)
-                if found:
-                    row = {
-                        "symbol": symbol,
-                        "setup": info["type"],
-                        "price": f"${info['price']:.2f}",
-                        "day%": f"{info['day_change']:.2f}%",
-                        "valid": info["valid"],
-                        "sector_spdr": df_symbols.loc[df_symbols["symbols"] == symbol, "sector_spdr"].values[0] if "sector_spdr" in df_symbols else "",
-                        "tags": df_symbols.loc[df_symbols["symbols"] == symbol, "tags"].values[0] if "tags" in df_symbols else "",
-                        "break_pct": info.get("break_pct", ""),
-                        "monthly_change_pct": info.get("monthly_change_pct", "")
-                    }
-                    results.append(row)
 
             progress = (i + 1) / len(SYMBOLS)
             progress_bar.progress(progress)
@@ -268,20 +282,14 @@ def main():
         if results:
             df_results = pd.DataFrame(results)
 
-            # APLICAR FILTROS
             if setor_filter != "Todos":
                 df_results = df_results[df_results["sector_spdr"] == setor_filter]
             if tag_filter != "Todos":
                 df_results = df_results[df_results["tags"] == tag_filter]
-            if setup_filter != "Todos":
-                df_results = df_results[df_results["setup"] == setup_filter]
-            if search_filter:
-                mask = df_results.apply(lambda row: row.astype(str).str.contains(search_filter, case=False).any(), axis=1)
-                df_results = df_results[mask]
 
             render_results_table(df_results)
         else:
-            st.warning("❌ Nenhum setup encontrado.")
+            st.warning(f"❌ Nenhum setup encontrado em {timeframe_filter} - {setup_filter}")
 
 
 if __name__ == "__main__":
