@@ -138,7 +138,23 @@ def detect_inside_bar(df):
         )
         high_prev, low_prev = float(previous["high"]), float(previous["low"])
 
-        if high_curr < high_prev and low_curr > low_prev:
+        # Condições do Inside Bar:
+        # 1. Máxima atual < Máxima anterior
+        # 2. Mínima atual > Mínima anterior
+        maxima_dentro = high_curr < high_prev
+        minima_dentro = low_curr > low_prev
+        
+        # DEBUG TEMPORÁRIO para Inside Bar
+        is_inside = maxima_dentro and minima_dentro
+        if is_inside:
+            st.write(f"🚨 INSIDE BAR DEBUG:")
+            st.write(f"   Current:  H={high_curr:.2f} L={low_curr:.2f}")
+            st.write(f"   Previous: H={high_prev:.2f} L={low_prev:.2f}")
+            st.write(f"   Máxima dentro: {high_curr:.2f} < {high_prev:.2f} = {maxima_dentro}")
+            st.write(f"   Mínima dentro: {low_curr:.2f} > {low_prev:.2f} = {minima_dentro}")
+            st.write("---")
+
+        if is_inside:
             day_change = ((close_curr - open_curr) / open_curr) * 100 if open_curr != 0 else 0
             return True, {
                 "type": "Inside Bar",
