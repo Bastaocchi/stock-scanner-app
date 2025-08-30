@@ -104,6 +104,60 @@ def normalize_dataframe(df):
     return df_normalized
 
 
+def detect_double_inside_bar(df):
+    """Detecta padrão Double Inside Bar"""
+    if df is None or len(df) < 3:
+        return False, None
+
+    df_norm = normalize_dataframe(df)
+    if df_norm is None:
+        return False, None
+
+    current = df_norm.iloc[-1]
+    previous = df_norm.iloc[-2]
+    before_previous = df_norm.iloc[-3]
+
+    try:
+        # Corrige dados da barra atual
+        open_curr, high_curr, low_curr, close_curr, valid_flag_curr = fix_candle(
+            float(current["open"]),
+            float(current["high"]),
+            float(current["low"]),
+            float(current["close"])
+        )
+        
+        # Corrige dados da barra anterior
+        open_prev, high_prev, low_prev, close_prev, valid_flag_prev = fix_candle(
+            float(previous["open"]),
+            float(previous["high"]),
+            float(previous["low"]),
+            float(previous["close"])
+        )
+        
+        # Dados da barra antes da anterior
+        high_before, low_before = float(before_previous["high"]), float(before_previous["low"])
+
+        # Verifica se a barra atual é inside da anterior
+        current_inside = high_curr < high_prev and low_curr > low_prev
+        
+        # Verifica se a barra anterior é inside da que vem antes
+        previous_inside = high_prev < high_before and low_prev > low_before
+
+        if current_inside and previous_inside:
+            valid_flag = "Adjusted" if valid_flag_curr == "Adjusted" or valid_flag_prev == "Adjusted" else "OK"
+            return True, {
+                "type": "Double Inside Bar",
+                "price": close_curr,
+                "valid": valid_flag
+            }
+            
+    except (ValueError, KeyError) as e:
+        st.error(f"Erro no Double Inside Bar: {e}")
+        return False, None
+    
+    return False, None
+
+
 def detect_inside_bar(df):
     """Detecta padrão Inside Bar"""
     if df is None or len(df) < 2:
@@ -380,9 +434,9 @@ def main():
     timeframe_filter = col3.selectbox("⏳ Timeframe", ["Daily", "Weekly", "Monthly", "Quarterly"])
 
     if timeframe_filter == "Daily":
-        setup_filter = col4.selectbox("⚡ Setup", ["Inside Bar"])
+        setup_filter = col4.selectbox("⚡ Setup", ["Inside Bar", "Double Inside Bar"])
     elif timeframe_filter == "Weekly":
-        setup_filter = col4.selectbox("⚡ Setup", ["Inside Bar"])
+        setup_filter = col4.selectbox("⚡ Setup", ["Inside Bar", "Double Inside Bar"])
     elif timeframe_filter == "Monthly":
         setup_filter = col4.selectbox("⚡ Setup", ["Inside Bar", "2Down Green Monthly"])
     else:  # Quarterly
@@ -410,6 +464,8 @@ def main():
                 if timeframe_filter == "Daily":
                     if setup_filter == "Inside Bar":
                         found, info = detect_inside_bar(df)
+                    elif setup_filter == "Double Inside Bar":
+                        found, info = detect_double_inside_bar(df)
 
                 elif timeframe_filter == "Weekly":
                     df_norm = normalize_dataframe(df)
@@ -422,6 +478,8 @@ def main():
                         }).dropna()
                         if setup_filter == "Inside Bar":
                             found, info = detect_inside_bar(df_weekly)
+                        elif setup_filter == "Double Inside Bar":
+                            found, info = detect_double_inside_bar(df_weekly)
 
                 elif timeframe_filter == "Monthly":
                     if setup_filter == "Inside Bar":
