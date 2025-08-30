@@ -95,42 +95,6 @@ def detect_inside_bar(df):
     return False, None
 
 
-def detect_hammer_setup(df):
-    if len(df) < 3:
-        return False, None
-
-    current = df.iloc[-1]
-    previous = df.iloc[-2]
-
-    open_curr, high_curr, low_curr, close_curr, valid_flag = fix_candle(
-        float(current["Open"]),
-        float(current["High"]),
-        float(current["Low"]),
-        float(current["Close"])
-    )
-    low_prev = float(previous["Low"])
-
-    body_size = abs(close_curr - open_curr)
-    total_range = high_curr - low_curr
-    lower_shadow = min(open_curr, close_curr) - low_curr
-    upper_shadow = high_curr - max(open_curr, close_curr)
-
-    is_small_body = body_size <= 0.4 * total_range
-    is_long_lower_shadow = lower_shadow >= 2 * body_size
-    is_short_upper_shadow = upper_shadow <= body_size
-    broke_below = low_curr < low_prev
-    closed_green = close_curr > open_curr
-
-    if is_small_body and is_long_lower_shadow and is_short_upper_shadow and broke_below and closed_green:
-        return True, {
-            "type": "Hammer Setup",
-            "price": close_curr,
-            "day_change": ((close_curr - open_curr) / open_curr) * 100,
-            "valid": valid_flag
-        }
-    return False, None
-
-
 @st.cache_data(ttl=3600)
 def get_stock_data(symbol, period="1y", interval="1d"):
     try:
@@ -176,65 +140,75 @@ def main():
 
     # Carregar lista de símbolos do GitHub
     df_symbols = load_symbols_from_github()
-    df_symbols.columns = df_symbols.columns.str.strip().str.lower()
+    df_symbols.columns = df_symbols.columns.str.strip()
 
     st.info(f"✅ Carregados {len(df_symbols)} símbolos do GitHub")
 
-    if "symbols" in df_symbols.columns:
-        SYMBOLS = df_symbols["symbols"].dropna().tolist()
-    elif "symbol" in df_symbols.columns:
-        SYMBOLS = df_symbols["symbol"].dropna().tolist()
-    else:
-        st.error("❌ O CSV precisa ter uma coluna chamada 'symbols' ou 'symbol'")
-        return
+    # =========================
+    # FILTROS NO TOPO
+    # =========================
+    col1, col2, col3, col4 = st.columns([1,1,1,2])
 
+    setor_filter = col1.selectbox("📌 Setor", ["Todos"] + sorted(df_symbols["Sector_SPDR"].dropna().unique().tolist()))
+    tag_filter = col2.selectbox("🏷️ Tag", ["Todos"] + sorted(df_symbols["Tags"].dropna().unique().tolist()))
+    setup_filter = col3.selectbox("⚡ Setup", ["Todos", "Inside Bar", "2Down Green Monthly"])
+    search_filter = col4.text_input("🔍 Busca global")
+
+    # =========================
+    # BOTÃO SCANNER
+    # =========================
     if st.button("🚀 Rodar Scanner"):
         results = []
-
-        # Barra de progresso discreta
         progress_bar = st.progress(0)
         status_text = st.empty()
+
+        SYMBOLS = df_symbols["Symbol"].dropna().tolist()
 
         for i, symbol in enumerate(SYMBOLS):
             df = get_stock_data(symbol)
             if df is None or len(df) < 3:
                 continue
 
+            # por enquanto só Inside Bar (vamos trocar setups depois)
             found, info = detect_inside_bar(df)
             if found:
-                results.append({
+                row = {
                     "Symbol": symbol,
                     "Setup": info["type"],
                     "Price": f"${info['price']:.2f}",
                     "Day%": f"{info['day_change']:.2f}%",
                     "Valid": info["valid"]
-                })
-                continue
+                }
 
-            found, info = detect_hammer_setup(df)
-            if found:
-                results.append({
-                    "Symbol": symbol,
-                    "Setup": info["type"],
-                    "Price": f"${info['price']:.2f}",
-                    "Day%": f"{info['day_change']:.2f}%",
-                    "Valid": info["valid"]
-                })
+                # adicionar colunas extras vindas do CSV
+                extra = df_symbols[df_symbols["Symbol"] == symbol].iloc[0].to_dict()
+                row.update(extra)
+                results.append(row)
 
-            # Atualizar progresso + setups em tempo real
+            # Atualizar barra de progresso
             progress = (i + 1) / len(SYMBOLS)
             progress_bar.progress(progress)
-            status_text.text(
-                f"⏳ Processando {i+1}/{len(SYMBOLS)} símbolos... | 🎯 {len(results)} setups encontrados"
-            )
-            time.sleep(0.05)  # permite a UI atualizar
+            status_text.text(f"⏳ {i+1}/{len(SYMBOLS)} símbolos... | 🎯 {len(results)} setups")
 
-        # Limpar barra no final
         progress_bar.empty()
         status_text.empty()
 
         if results:
             df_results = pd.DataFrame(results)
+
+            # =========================
+            # APLICAR FILTROS
+            # =========================
+            if setor_filter != "Todos":
+                df_results = df_results[df_results["Sector_SPDR"] == setor_filter]
+            if tag_filter != "Todos":
+                df_results = df_results[df_results["Tags"] == tag_filter]
+            if setup_filter != "Todos":
+                df_results = df_results[df_results["Setup"] == setup_filter]
+            if search_filter:
+                mask = df_results.apply(lambda row: row.astype(str).str.contains(search_filter, case=False).any(), axis=1)
+                df_results = df_results[mask]
+
             render_results_table(df_results)
         else:
             st.warning("❌ Nenhum setup encontrado.")
