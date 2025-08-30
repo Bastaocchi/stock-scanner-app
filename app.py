@@ -59,7 +59,6 @@ th:nth-child(6), td:nth-child(6) { width: 150px !important; }
 # FUNÇÕES DE SCAN
 # =========================
 def fix_candle(open_p, high_p, low_p, close_p):
-    """Corrige candles incoerentes do Yahoo (Open > High ou Open < Low)."""
     valid_flag = "OK"
     if open_p > high_p:
         high_p = open_p
@@ -95,21 +94,53 @@ def detect_inside_bar(df):
     return False, None
 
 
+def detect_2down_green_monthly(df):
+    # 🔹 Resample para candles mensais
+    df_monthly = df.resample("M").agg({
+        "Open": "first",
+        "High": "max",
+        "Low": "min",
+        "Close": "last"
+    })
+
+    if len(df_monthly) < 2:
+        return False, None
+
+    current = df_monthly.iloc[-1]
+    previous = df_monthly.iloc[-2]
+
+    open_curr, high_curr, low_curr, close_curr, valid_flag = fix_candle(
+        float(current["Open"]),
+        float(current["High"]),
+        float(current["Low"]),
+        float(current["Close"])
+    )
+    low_prev, high_prev = float(previous["Low"]), float(previous["High"])
+
+    # 📌 Condições TheStrat
+    broke_down = low_curr < low_prev        # rompeu mínima anterior
+    closed_green = close_curr > open_curr   # candle verde
+    no_break_high = high_curr < high_prev   # não rompeu máxima anterior
+
+    if broke_down and closed_green and no_break_high:
+        return True, {
+            "type": "2Down Green Monthly",
+            "price": close_curr,
+            "day_change": ((close_curr - open_curr) / open_curr) * 100,
+            "valid": valid_flag
+        }
+    return False, None
+
+
 @st.cache_data(ttl=3600)
 def get_stock_data(symbol, period="1y", interval="1d"):
     try:
-        df = yf.download(
-            symbol,
-            period=period,
-            interval=interval,
-            auto_adjust=False   # 🔹 OHLC real, sem ajuste
-        )
+        df = yf.download(symbol, period=period, interval=interval, auto_adjust=False)
         return df if not df.empty else None
     except:
         return None
 
 
-# 🔹 Carregar símbolos do GitHub
 @st.cache_data(ttl=3600)
 def load_symbols_from_github():
     url = "https://raw.githubusercontent.com/Bastaocchi/stock-scanner-app/main/symbols.csv"
@@ -140,8 +171,6 @@ def main():
 
     # Carregar lista de símbolos do GitHub
     df_symbols = load_symbols_from_github()
-
-    # 🔹 Normalizar colunas para lowercase
     df_symbols.columns = df_symbols.columns.str.strip().str.lower()
 
     st.info(f"✅ Carregados {len(df_symbols)} símbolos do GitHub")
@@ -151,24 +180,12 @@ def main():
     # =========================
     col1, col2, col3, col4 = st.columns([1,1,1,2])
 
-    # Filtro por setor
-    if "sector_spdr" in df_symbols.columns:
-        setores = ["Todos"] + sorted(df_symbols["sector_spdr"].dropna().unique().tolist())
-    else:
-        setores = ["Todos"]
+    setores = ["Todos"] + sorted(df_symbols["sector_spdr"].dropna().unique().tolist()) if "sector_spdr" in df_symbols else ["Todos"]
+    tags = ["Todos"] + sorted(df_symbols["tags"].dropna().unique().tolist()) if "tags" in df_symbols else ["Todos"]
+
     setor_filter = col1.selectbox("📌 Setor", setores)
-
-    # Filtro por tag
-    if "tags" in df_symbols.columns:
-        tags = ["Todos"] + sorted(df_symbols["tags"].dropna().unique().tolist())
-    else:
-        tags = ["Todos"]
     tag_filter = col2.selectbox("🏷️ Tag", tags)
-
-    # Setup
     setup_filter = col3.selectbox("⚡ Setup", ["Todos", "Inside Bar", "2Down Green Monthly"])
-
-    # Busca global
     search_filter = col4.text_input("🔍 Busca global")
 
     # =========================
@@ -186,23 +203,20 @@ def main():
             if df is None or len(df) < 3:
                 continue
 
-            # por enquanto só Inside Bar (vamos trocar setups depois)
             found, info = detect_inside_bar(df)
             if found:
-                row = {
-                    "symbol": symbol,
-                    "setup": info["type"],
-                    "price": f"${info['price']:.2f}",
-                    "day%": f"{info['day_change']:.2f}%",
-                    "valid": info["valid"]
-                }
-
-                # adicionar colunas extras vindas do CSV
+                row = {"symbol": symbol, "setup": info["type"], "price": f"${info['price']:.2f}", "day%": f"{info['day_change']:.2f}%", "valid": info["valid"]}
                 extra = df_symbols[df_symbols["symbols"] == symbol].iloc[0].to_dict()
                 row.update(extra)
                 results.append(row)
+            else:
+                found, info = detect_2down_green_monthly(df)
+                if found:
+                    row = {"symbol": symbol, "setup": info["type"], "price": f"${info['price']:.2f}", "day%": f"{info['day_change']:.2f}%", "valid": info["valid"]}
+                    extra = df_symbols[df_symbols["symbols"] == symbol].iloc[0].to_dict()
+                    row.update(extra)
+                    results.append(row)
 
-            # Atualizar barra de progresso
             progress = (i + 1) / len(SYMBOLS)
             progress_bar.progress(progress)
             status_text.text(f"⏳ {i+1}/{len(SYMBOLS)} símbolos... | 🎯 {len(results)} setups")
@@ -213,9 +227,6 @@ def main():
         if results:
             df_results = pd.DataFrame(results)
 
-            # =========================
-            # APLICAR FILTROS
-            # =========================
             if setor_filter != "Todos":
                 df_results = df_results[df_results["sector_spdr"] == setor_filter]
             if tag_filter != "Todos":
