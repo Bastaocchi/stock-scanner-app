@@ -1,8 +1,19 @@
 import streamlit as st
-import yfinance as yf
 import pandas as pd
 import time
 from datetime import datetime, timedelta
+from tvDatafeed import TvDatafeed, Interval
+
+# Inicializa o cliente TradingView
+@st.cache_resource
+def get_tv_client():
+    """Inicializa cliente TradingView"""
+    try:
+        tv = TvDatafeed()
+        return tv
+    except Exception as e:
+        st.error(f"Erro ao conectar com TradingView: {e}")
+        return None
 
 # =========================
 # CONFIGURAÇÃO DA PÁGINA
@@ -125,7 +136,15 @@ def detect_inside_bar(df):
         )
         high_prev, low_prev = float(previous["high"]), float(previous["low"])
 
-        if high_curr < high_prev and low_curr > low_prev:
+        # Condições do Inside Bar:
+        # 1. Máxima atual < Máxima anterior
+        # 2. Mínima atual > Mínima anterior
+        maxima_dentro = high_curr < high_prev
+        minima_dentro = low_curr > low_prev
+        
+        is_inside = maxima_dentro and minima_dentro
+
+        if is_inside:
             day_change = ((close_curr - open_curr) / open_curr) * 100 if open_curr != 0 else 0
             return True, {
                 "type": "Inside Bar",
@@ -162,7 +181,6 @@ def detect_2down_green_monthly(df):
                 df_norm['date'] = pd.to_datetime(df_norm['date'])
                 df_norm = df_norm.set_index('date')
             else:
-                # Se não há coluna de data, usa o índice atual como data
                 df_norm.index = pd.to_datetime(df_norm.index)
 
         # Cria dados mensais
@@ -174,12 +192,22 @@ def detect_2down_green_monthly(df):
             'volume': 'sum' if 'volume' in df_norm.columns else lambda x: 0
         }).dropna()
 
-        if len(df_monthly) < 2:  # Precisamos de pelo menos 2 barras mensais
+        if len(df_monthly) < 2:
             return False, None
 
-        # Analisa as últimas 2 barras mensais
-        current = df_monthly.iloc[-1]   # Barra atual (em andamento)
-        previous = df_monthly.iloc[-2]  # Barra anterior
+        # Pega apenas barras mensais COMPLETAS (não o mês em andamento)
+        today = pd.Timestamp.now()
+        current_month_start = today.replace(day=1)
+        
+        # Remove o mês atual se ainda estamos nele (barra incompleta)
+        df_monthly_complete = df_monthly[df_monthly.index < current_month_start]
+        
+        if len(df_monthly_complete) < 2:
+            return False, None
+
+        # Analisa as últimas 2 barras mensais COMPLETAS
+        current = df_monthly_complete.iloc[-1]   # Última barra completa
+        previous = df_monthly_complete.iloc[-2]  # Barra anterior
 
         open_curr, high_curr, low_curr, close_curr, valid_flag = fix_candle(
             float(current["open"]),
@@ -193,7 +221,7 @@ def detect_2down_green_monthly(df):
 
         # Condições do 2Down Green Monthly
         rompeu_minima = low_curr < low_prev           # 1. Rompeu mínima anterior
-        fechou_verde = close_curr > open_curr         # 2. Fechou verde
+        fechou_verde = close_curr > open_curr         # 2. Fechou verde (close > open)
         nao_rompeu_maxima = high_curr < high_prev     # 3. NÃO rompeu máxima anterior
 
         if rompeu_minima and fechou_verde and nao_rompeu_maxima:
@@ -207,10 +235,7 @@ def detect_2down_green_monthly(df):
                 "day_change": monthly_change,
                 "valid": valid_flag,
                 "break_pct": round(break_pct, 2),
-                "monthly_change_pct": round(monthly_change, 2),
-                "rompeu_minima": rompeu_minima,
-                "fechou_verde": fechou_verde,
-                "nao_rompeu_maxima": nao_rompeu_maxima
+                "monthly_change_pct": round(monthly_change, 2)
             }
 
     except Exception as e:
@@ -220,23 +245,176 @@ def detect_2down_green_monthly(df):
     return False, None
 
 
-@st.cache_data(ttl=3600)
-def get_stock_data(symbol, period="2y", interval="1d"):
-    """Baixa dados do Yahoo Finance com tratamento de erros"""
+def detect_2down_green_3m(df):
+    """
+    Detecta 2Down Green 3M (trimestral):
+    - Vela atual rompeu mínima da vela anterior (low_atual < low_anterior)
+    - Vela atual está verde (close_atual > open_atual)
+    - Vela atual NÃO rompeu máxima da vela anterior (high_atual < high_anterior)
+    """
+    if df is None or df.empty:
+        return False, None
+
     try:
-        # Aumentei o período para 2 anos para ter mais dados mensais
+        df_norm = normalize_dataframe(df)
+        if df_norm is None:
+            return False, None
+
+        # Garante que o índice é datetime
+        if not isinstance(df_norm.index, pd.DatetimeIndex):
+            df_norm = df_norm.reset_index()
+            if 'date' in df_norm.columns:
+                df_norm['date'] = pd.to_datetime(df_norm['date'])
+                df_norm = df_norm.set_index('date')
+            else:
+                df_norm.index = pd.to_datetime(df_norm.index)
+
+        # Usa QE (Quarter End) em vez de 3M para trimestres corretos do calendário
+        df_quarterly = df_norm.resample('QE').agg({
+            'open': 'first',
+            'high': 'max',
+            'low': 'min',
+            'close': 'last',
+            'volume': 'sum' if 'volume' in df_norm.columns else lambda x: 0
+        }).dropna()
+
+        if len(df_quarterly) < 2:
+            return False, None
+
+        # Pega apenas trimestres COMPLETOS (não o trimestre em andamento)
+        today = pd.Timestamp.now()
+        # Determina o fim do trimestre atual
+        current_quarter_end = pd.Timestamp(today.year, ((today.month - 1) // 3 + 1) * 3, 1) + pd.offsets.MonthEnd(0)
+        
+        # Remove o trimestre atual se ainda estamos nele (barra incompleta)
+        df_quarterly_complete = df_quarterly[df_quarterly.index < current_quarter_end]
+        
+        if len(df_quarterly_complete) < 2:
+            return False, None
+
+        # Analisa as últimas 2 barras trimestrais COMPLETAS
+        current = df_quarterly_complete.iloc[-1]   # Última barra completa
+        previous = df_quarterly_complete.iloc[-2]  # Barra anterior
+
+        open_curr, high_curr, low_curr, close_curr, valid_flag = fix_candle(
+            float(current["open"]),
+            float(current["high"]),
+            float(current["low"]),
+            float(current["close"])
+        )
+        
+        high_prev = float(previous["high"])
+        low_prev = float(previous["low"])
+
+        # Condições do 2Down Green 3M
+        rompeu_minima = low_curr < low_prev           # 1. Rompeu mínima anterior
+        fechou_verde = close_curr > open_curr         # 2. Fechou verde
+        nao_rompeu_maxima = high_curr < high_prev     # 3. NÃO rompeu máxima anterior
+
+        if rompeu_minima and fechou_verde and nao_rompeu_maxima:
+            break_amount = low_prev - low_curr
+            break_pct = (break_amount / low_prev) * 100 if low_prev > 0 else 0
+            quarterly_change = ((close_curr - open_curr) / open_curr) * 100 if open_curr != 0 else 0
+
+            return True, {
+                "type": "2Down Green 3M",
+                "price": round(close_curr, 2),
+                "day_change": quarterly_change,
+                "valid": valid_flag,
+                "break_pct": round(break_pct, 2),
+                "quarterly_change_pct": round(quarterly_change, 2)
+            }
+
+    except Exception as e:
+        st.error(f"Erro no 2Down Green 3M: {e}")
+        return False, None
+
+    return False, None
+
+
+@st.cache_data(ttl=3600)
+def get_stock_data_yahoo(symbol, period="2y", interval="1d"):
+    """Fallback: Baixa dados do Yahoo Finance"""
+    try:
+        import yfinance as yf
         ticker = yf.Ticker(symbol)
         df = ticker.history(period=period, interval=interval, auto_adjust=False)
         
         if df is None or df.empty:
             return None
             
+        # Padroniza nomes das colunas
+        df.columns = [col.lower() for col in df.columns]
+        
         # Remove timezone se presente
         if hasattr(df.index, 'tz_localize'):
             df.index = df.index.tz_localize(None)
             
         return df
+    except ImportError:
+        st.error("yfinance não está instalado. Use: pip install yfinance")
+        return None
     except Exception as e:
+        return None
+
+
+@st.cache_data(ttl=3600)
+def get_stock_data(symbol, period="2y", interval="1d"):
+    """Baixa dados do TradingView com tratamento de erros"""
+    try:
+        tv = get_tv_client()
+        if tv is None:
+            return None
+            
+        # Mapeia intervalo para TradingView
+        tv_interval = Interval.in_daily
+        if interval == "1d":
+            tv_interval = Interval.in_daily
+        elif interval == "1h":
+            tv_interval = Interval.in_1_hour
+        elif interval == "4h":
+            tv_interval = Interval.in_4_hour
+        
+        # Calcula número de barras baseado no período
+        n_bars = 500  # padrão
+        if period == "1y":
+            n_bars = 365
+        elif period == "2y":
+            n_bars = 730
+        elif period == "6m":
+            n_bars = 180
+        elif period == "3m":
+            n_bars = 90
+            
+        # Tenta diferentes exchanges para encontrar o símbolo
+        exchanges = ['NASDAQ', 'NYSE', 'AMEX', 'BOVESPA', 'BMF']
+        
+        for exchange in exchanges:
+            try:
+                df = tv.get_hist(
+                    symbol=symbol,
+                    exchange=exchange,
+                    interval=tv_interval,
+                    n_bars=n_bars
+                )
+                
+                if df is not None and not df.empty:
+                    # Padroniza nomes das colunas para compatibilidade
+                    df.columns = [col.lower() for col in df.columns]
+                    
+                    # Renomeia colunas se necessário
+                    if 'adj close' in df.columns:
+                        df['close'] = df['adj close']
+                    
+                    return df
+                    
+            except Exception as e:
+                continue  # Tenta próximo exchange
+                
+        return None
+        
+    except Exception as e:
+        st.error(f"Erro geral no TradingView para {symbol}: {e}")
         return None
 
 
@@ -311,6 +489,16 @@ def main():
         return
 
     # =========================
+    # CONFIGURAÇÕES DE DADOS
+    # =========================
+    st.sidebar.header("⚙️ Configurações")
+    data_source = st.sidebar.selectbox(
+        "📊 Fonte de Dados",
+        ["TradingView", "Yahoo Finance"],
+        index=0
+    )
+
+    # =========================
     # FILTROS NO TOPO
     # =========================
     col1, col2, col3, col4 = st.columns([1,1,1,2])
@@ -320,14 +508,16 @@ def main():
 
     setor_filter = col1.selectbox("📌 Setor", setores)
     tag_filter = col2.selectbox("🏷️ Tag", tags)
-    timeframe_filter = col3.selectbox("⏳ Timeframe", ["Daily", "Weekly", "Monthly"])
+    timeframe_filter = col3.selectbox("⏳ Timeframe", ["Daily", "Weekly", "Monthly", "Quarterly"])
 
     if timeframe_filter == "Daily":
         setup_filter = col4.selectbox("⚡ Setup", ["Inside Bar"])
     elif timeframe_filter == "Weekly":
         setup_filter = col4.selectbox("⚡ Setup", ["Inside Bar"])
-    else:  # Monthly
+    elif timeframe_filter == "Monthly":
         setup_filter = col4.selectbox("⚡ Setup", ["Inside Bar", "2Down Green Monthly"])
+    else:  # Quarterly
+        setup_filter = col4.selectbox("⚡ Setup", ["Inside Bar", "2Down Green 3M"])
 
     # =========================
     # BOTÃO SCANNER
@@ -342,7 +532,11 @@ def main():
 
         for i, symbol in enumerate(SYMBOLS):
             try:
-                df = get_stock_data(symbol)
+                if data_source == "TradingView":
+                    df = get_stock_data(symbol)
+                else:
+                    df = get_stock_data_yahoo(symbol)  # função de fallback
+                    
                 if df is None or len(df) < 5:  # Precisa de pelo menos 5 dias de dados
                     continue
 
@@ -378,6 +572,21 @@ def main():
                     elif setup_filter == "2Down Green Monthly":
                         found, info = detect_2down_green_monthly(df)
 
+                elif timeframe_filter == "Quarterly":
+                    if setup_filter == "Inside Bar":
+                        df_norm = normalize_dataframe(df)
+                        if df_norm is not None:
+                            # Usa QE (Quarter End) para trimestres corretos do calendário
+                            df_quarterly = df_norm.resample("QE").agg({
+                                "open": "first",
+                                "high": "max",
+                                "low": "min",
+                                "close": "last"
+                            }).dropna()
+                            found, info = detect_inside_bar(df_quarterly)
+                    elif setup_filter == "2Down Green 3M":
+                        found, info = detect_2down_green_3m(df)
+
                 if found and info:
                     # Busca informações adicionais do símbolo
                     symbol_row = df_symbols[df_symbols["symbols"] == symbol]
@@ -397,10 +606,13 @@ def main():
                         if "tags" in df_symbols.columns:
                             row["tags"] = symbol_row["tags"].values[0]
 
-                    # Adiciona informações específicas do 2Down Green Monthly
-                    if setup_filter == "2Down Green Monthly" and "break_pct" in info:
+                    # Adiciona informações específicas dos setups 2Down Green
+                    if setup_filter in ["2Down Green Monthly", "2Down Green 3M"] and "break_pct" in info:
                         row["break%"] = f"{info['break_pct']:.2f}%"
-                        row["monthly%"] = f"{info['monthly_change_pct']:.2f}%"
+                        if setup_filter == "2Down Green Monthly":
+                            row["monthly%"] = f"{info['monthly_change_pct']:.2f}%"
+                        else:  # 2Down Green 3M
+                            row["quarterly%"] = f"{info['quarterly_change_pct']:.2f}%"
 
                     results.append(row)
 
