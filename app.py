@@ -89,7 +89,7 @@ def detect_inside_bar(df):
 
 
 def detect_2down_green_monthly(df):
-    """Detecta 2Down Green Monthly (barra em andamento)"""
+    """Detecta 2Down Green Monthly na barra atual em andamento"""
     if df is None or df.empty:
         return False, None
 
@@ -118,8 +118,8 @@ def detect_2down_green_monthly(df):
     if len(df_monthly) < 2:
         return False, None
 
-    current = df_monthly.iloc[-1]   # 🔹 barra mensal atual (em andamento)
-    previous = df_monthly.iloc[-2]  # 🔹 barra mensal anterior
+    current = df_monthly.iloc[-1]   # barra atual (em andamento)
+    previous = df_monthly.iloc[-2]  # barra anterior
 
     open_curr, high_curr, low_curr, close_curr, valid_flag = fix_candle(
         float(current["open"]),
@@ -129,8 +129,8 @@ def detect_2down_green_monthly(df):
     )
     low_prev = float(previous["low"])
 
-    broke_down = low_curr < low_prev          # rompeu mínima anterior
-    closed_green = close_curr > open_curr     # está verde agora
+    broke_down = low_curr < low_prev
+    closed_green = close_curr > open_curr
 
     if broke_down and closed_green:
         break_amount = low_prev - low_curr
@@ -202,7 +202,13 @@ def main():
     setor_filter = col1.selectbox("📌 Setor", setores)
     tag_filter = col2.selectbox("🏷️ Tag", tags)
     timeframe_filter = col3.selectbox("⏳ Timeframe", ["Daily", "Weekly", "Monthly"])
-    setup_filter = col4.selectbox("⚡ Setup", ["Inside Bar", "2Down Green Monthly"])
+
+    if timeframe_filter == "Daily":
+        setup_filter = col4.selectbox("⚡ Setup", ["Inside Bar"])
+    elif timeframe_filter == "Weekly":
+        setup_filter = col4.selectbox("⚡ Setup", ["Inside Bar"])
+    else:  # Monthly
+        setup_filter = col4.selectbox("⚡ Setup", ["Inside Bar", "2Down Green Monthly"])
 
     # =========================
     # BOTÃO SCANNER
@@ -221,18 +227,22 @@ def main():
 
             found, info = False, None
 
-            if setup_filter == "Inside Bar":
-                if timeframe_filter == "Daily":
+            if timeframe_filter == "Daily":
+                if setup_filter == "Inside Bar":
                     found, info = detect_inside_bar(df)
-                elif timeframe_filter == "Weekly":
-                    df_weekly = df.resample("W").agg({
-                        "Open": "first",
-                        "High": "max",
-                        "Low": "min",
-                        "Close": "last"
-                    })
+
+            elif timeframe_filter == "Weekly":
+                df_weekly = df.resample("W").agg({
+                    "Open": "first",
+                    "High": "max",
+                    "Low": "min",
+                    "Close": "last"
+                })
+                if setup_filter == "Inside Bar":
                     found, info = detect_inside_bar(df_weekly)
-                elif timeframe_filter == "Monthly":
+
+            elif timeframe_filter == "Monthly":
+                if setup_filter == "Inside Bar":
                     df_monthly = df.resample("M").agg({
                         "Open": "first",
                         "High": "max",
@@ -240,9 +250,8 @@ def main():
                         "Close": "last"
                     })
                     found, info = detect_inside_bar(df_monthly)
-
-            elif setup_filter == "2Down Green Monthly":
-                found, info = detect_2down_green_monthly(df)
+                elif setup_filter == "2Down Green Monthly":
+                    found, info = detect_2down_green_monthly(df)
 
             if found:
                 row = {
