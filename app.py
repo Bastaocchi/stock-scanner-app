@@ -267,9 +267,6 @@ def detect_2down_green_3m(df):
             'volume': 'sum' if 'volume' in df_norm.columns else lambda x: 0
         }).dropna()
 
-        # DEBUG: mostrar os trimestres criados
-        # st.write(f"DEBUG - Trimestres criados: {df_quarterly.index.strftime('%Y-%m-%d').tolist()}")
-
         if len(df_quarterly) < 2:
             return False, None
 
@@ -302,18 +299,6 @@ def detect_2down_green_3m(df):
         rompeu_minima = low_curr < low_prev           # 1. Rompeu mínima anterior
         fechou_verde = close_curr > open_curr         # 2. Fechou verde
         nao_rompeu_maxima = high_curr < high_prev     # 3. NÃO rompeu máxima anterior
-
-        # DEBUG TEMPORÁRIO - vamos ver o que está acontecendo
-        if rompeu_minima and fechou_verde and nao_rompeu_maxima:
-            st.write(f"🚨 DEBUG 2DOWN GREEN 3M:")
-            st.write(f"   Current:  O={open_curr:.2f} H={high_curr:.2f} L={low_curr:.2f} C={close_curr:.2f}")
-            st.write(f"   Previous: H={high_prev:.2f} L={low_prev:.2f}")
-            st.write(f"   ✅ Rompeu mínima: {low_curr:.2f} < {low_prev:.2f} = {rompeu_minima}")
-            st.write(f"   ✅ Fechou verde: {close_curr:.2f} > {open_curr:.2f} = {fechou_verde}")
-            st.write(f"   ✅ Não rompeu máxima: {high_curr:.2f} < {high_prev:.2f} = {nao_rompeu_maxima}")
-            st.write(f"   📅 Current Quarter: {current.name.strftime('%Y-Q%q') if hasattr(current, 'name') else 'N/A'}")
-            st.write(f"   📅 Previous Quarter: {previous.name.strftime('%Y-Q%q') if hasattr(previous, 'name') else 'N/A'}")
-            st.write("---")
 
         if rompeu_minima and fechou_verde and nao_rompeu_maxima:
             break_amount = low_prev - low_curr
