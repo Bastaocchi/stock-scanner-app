@@ -95,26 +95,34 @@ def detect_inside_bar(df):
 
 
 def detect_2down_green_monthly(df):
+    if df is None or df.empty:
+        return False, None
+
     # 🔹 Garantir índice datetime
     if not isinstance(df.index, pd.DatetimeIndex):
         df = df.reset_index()
-        if "Date" in df.columns:
-            df["Date"] = pd.to_datetime(df["Date"])
-            df = df.set_index("Date")
+        if "date" in df.columns:
+            df["date"] = pd.to_datetime(df["date"])
+            df = df.set_index("date")
 
-    # 🔹 Garantir nomes corretos
-    df = df.rename(columns=str.capitalize)
+    # 🔹 Padronizar nomes das colunas para minúsculo
+    df.columns = [c.lower() for c in df.columns]
 
-    # 🔹 Verificar se colunas OHLC existem
-    if not all(col in df.columns for col in ["Open", "High", "Low", "Close"]):
+    # 🔹 Se não existir 'close', usar 'adj close'
+    if "close" not in df.columns and "adj close" in df.columns:
+        df["close"] = df["adj close"]
+
+    # 🔹 Verificar se temos todas as OHLC
+    required = {"open", "high", "low", "close"}
+    if not required.issubset(df.columns):
         return False, None
 
     # 🔹 Resample para candles mensais
     df_monthly = df.resample("M").agg({
-        "Open": "first",
-        "High": "max",
-        "Low": "min",
-        "Close": "last"
+        "open": "first",
+        "high": "max",
+        "low": "min",
+        "close": "last"
     })
 
     if len(df_monthly) < 2:
@@ -124,12 +132,12 @@ def detect_2down_green_monthly(df):
     previous = df_monthly.iloc[-2]
 
     open_curr, high_curr, low_curr, close_curr, valid_flag = fix_candle(
-        float(current["Open"]),
-        float(current["High"]),
-        float(current["Low"]),
-        float(current["Close"])
+        float(current["open"]),
+        float(current["high"]),
+        float(current["low"]),
+        float(current["close"])
     )
-    low_prev, high_prev = float(previous["Low"]), float(previous["High"])
+    low_prev, high_prev = float(previous["low"]), float(previous["high"])
 
     # 📌 Condições TheStrat
     broke_down = low_curr < low_prev        # rompeu mínima anterior
@@ -253,6 +261,7 @@ def main():
         if results:
             df_results = pd.DataFrame(results)
 
+            # APLICAR FILTROS
             if setor_filter != "Todos":
                 df_results = df_results[df_results["sector_spdr"] == setor_filter]
             if tag_filter != "Todos":
