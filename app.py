@@ -126,11 +126,9 @@ def detect_inside_bar(df):
         high_prev, low_prev = float(previous["high"]), float(previous["low"])
 
         if high_curr < high_prev and low_curr > low_prev:
-            day_change = ((close_curr - open_curr) / open_curr) * 100 if open_curr != 0 else 0
             return True, {
                 "type": "Inside Bar",
                 "price": close_curr,
-                "day_change": day_change,
                 "valid": valid_flag
             }
     except (ValueError, KeyError) as e:
@@ -196,17 +194,10 @@ def detect_2down_green_3m(df):
         nao_rompeu_maxima = high_curr < high_prev     # 3. NÃO rompeu máxima anterior
 
         if rompeu_minima and fechou_verde and nao_rompeu_maxima:
-            break_amount = low_prev - low_curr
-            break_pct = (break_amount / low_prev) * 100 if low_prev > 0 else 0
-            quarterly_change = ((close_curr - open_curr) / open_curr) * 100 if open_curr != 0 else 0
-
             return True, {
                 "type": "2Down Green 3M",
                 "price": round(close_curr, 2),
-                "day_change": quarterly_change,
-                "valid": valid_flag,
-                "break_pct": round(break_pct, 2),
-                "quarterly_change_pct": round(quarterly_change, 2)
+                "valid": valid_flag
             }
 
     except Exception as e:
@@ -273,20 +264,10 @@ def detect_2down_green_monthly(df):
         nao_rompeu_maxima = high_curr < high_prev     # 3. NÃO rompeu máxima anterior
 
         if rompeu_minima and fechou_verde and nao_rompeu_maxima:
-            break_amount = low_prev - low_curr
-            break_pct = (break_amount / low_prev) * 100 if low_prev > 0 else 0
-            monthly_change = ((close_curr - open_curr) / open_curr) * 100 if open_curr != 0 else 0
-
             return True, {
                 "type": "2Down Green Monthly",
                 "price": round(close_curr, 2),
-                "day_change": monthly_change,
-                "valid": valid_flag,
-                "break_pct": round(break_pct, 2),
-                "monthly_change_pct": round(monthly_change, 2),
-                "rompeu_minima": rompeu_minima,
-                "fechou_verde": fechou_verde,
-                "nao_rompeu_maxima": nao_rompeu_maxima
+                "valid": valid_flag
             }
 
     except Exception as e:
@@ -478,7 +459,6 @@ def main():
                         "symbol": symbol,
                         "setup": info["type"],
                         "price": f"${info['price']:.2f}",
-                        "day%": f"{info['day_change']:.2f}%",
                         "valid": info["valid"]
                     }
                     
@@ -488,11 +468,6 @@ def main():
                             row["sector_spdr"] = symbol_row["sector_spdr"].values[0]
                         if "tags" in df_symbols.columns:
                             row["tags"] = symbol_row["tags"].values[0]
-
-                    # Adiciona informações específicas do 2Down Green Monthly
-                    if setup_filter == "2Down Green Monthly" and "break_pct" in info:
-                        row["break%"] = f"{info['break_pct']:.2f}%"
-                        row["monthly%"] = f"{info['monthly_change_pct']:.2f}%"
 
                     results.append(row)
 
