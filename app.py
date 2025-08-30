@@ -141,7 +141,12 @@ def detect_inside_bar(df):
 
 
 def detect_2down_green_monthly(df):
-    """Detecta 2Down Green Monthly - versão corrigida"""
+    """
+    Detecta 2Down Green Monthly:
+    - Vela atual rompeu mínima da vela anterior (low_atual < low_anterior)
+    - Vela atual está verde (close_atual > open_atual)
+    - Vela atual NÃO rompeu máxima da vela anterior (high_atual < high_anterior)
+    """
     if df is None or df.empty:
         return False, None
 
@@ -169,13 +174,12 @@ def detect_2down_green_monthly(df):
             'volume': 'sum' if 'volume' in df_norm.columns else lambda x: 0
         }).dropna()
 
-        if len(df_monthly) < 3:  # Precisamos de pelo menos 3 barras mensais
+        if len(df_monthly) < 2:  # Precisamos de pelo menos 2 barras mensais
             return False, None
 
-        # Analisa as últimas 3 barras mensais
+        # Analisa as últimas 2 barras mensais
         current = df_monthly.iloc[-1]   # Barra atual (em andamento)
         previous = df_monthly.iloc[-2]  # Barra anterior
-        before_previous = df_monthly.iloc[-3]  # Barra anterior à anterior
 
         open_curr, high_curr, low_curr, close_curr, valid_flag = fix_candle(
             float(current["open"]),
@@ -184,18 +188,15 @@ def detect_2down_green_monthly(df):
             float(current["close"])
         )
         
+        high_prev = float(previous["high"])
         low_prev = float(previous["low"])
-        low_before_prev = float(before_previous["low"])
 
-        # Verifica se quebrou a mínima anterior
-        broke_down = low_curr < low_prev
-        # Verifica se fechou verde (acima da abertura)
-        closed_green = close_curr > open_curr
-        
-        # Adicional: verifica se houve uma sequência de 2 baixas anteriores
-        downtrend = low_prev < low_before_prev
+        # Condições do 2Down Green Monthly
+        rompeu_minima = low_curr < low_prev           # 1. Rompeu mínima anterior
+        fechou_verde = close_curr > open_curr         # 2. Fechou verde
+        nao_rompeu_maxima = high_curr < high_prev     # 3. NÃO rompeu máxima anterior
 
-        if broke_down and closed_green and downtrend:
+        if rompeu_minima and fechou_verde and nao_rompeu_maxima:
             break_amount = low_prev - low_curr
             break_pct = (break_amount / low_prev) * 100 if low_prev > 0 else 0
             monthly_change = ((close_curr - open_curr) / open_curr) * 100 if open_curr != 0 else 0
@@ -206,7 +207,10 @@ def detect_2down_green_monthly(df):
                 "day_change": monthly_change,
                 "valid": valid_flag,
                 "break_pct": round(break_pct, 2),
-                "monthly_change_pct": round(monthly_change, 2)
+                "monthly_change_pct": round(monthly_change, 2),
+                "rompeu_minima": rompeu_minima,
+                "fechou_verde": fechou_verde,
+                "nao_rompeu_maxima": nao_rompeu_maxima
             }
 
     except Exception as e:
