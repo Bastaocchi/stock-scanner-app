@@ -3,7 +3,7 @@ A,Agilent Technologies Inc,Electronic Technology,Electronic Equipment/Instrument
 AAL,American Airlines Group Inc,Transportation,Airlines,XLI - Industrials,airlines,NASDAQ
 AAPL,Apple Inc,Electronic Technology,Computer Processing Hardware,XLK - Technology,mag7,NASDAQ
 ABBV,AbbVie Inc,Health Technology,Pharmaceuticals: Major,XLV - Health Care,,NYSE
-ABNB,Airbnb Inc,Consumer Services,Hotels/Resorts/Cruise lines,XLY - Consumer Discretionary,,NASDAQ
+ABNB,Airbnb Inc,Consumer Services,Hotels/Resorts/Cruise lines,XLY - Consumer Discretionary,turismo hospedagem hotel,NASDAQ
 ABT,Abbott Laboratories,Health Technology,Medical Specialties,XLV - Health Care,,NYSE
 ACGL,Arch Capital Group Ltd,Finance,Specialty Insurance,XLF - Financial,,NASDAQ
 ACN,Accenture plc,Technology Services,Information Technology Services,XLK - Technology,,NYSE
@@ -53,6 +53,7 @@ AVY,Avery Dennison Corporation,Process Industries,Containers/Packaging,XLB - Mat
 AWK,American Water Works Company Inc,Utilities,Water Utilities,XLU - Utilities,,NYSE
 AXON,Axon Enterprise Inc,Electronic Technology,Electronic Equipment/Instruments,XLI - Industrials,,NASDAQ
 AXP,American Express Company,Finance,Finance/Rental/Leasing,XLF - Financial,,NYSE
+AXS,Axis Capital Holdings Limited,,,XLF - Financials,insurance,NYSE
 AZN,AstraZeneca PLC,Health Technology,Pharmaceuticals: Major,XLV - Health Care,,NASDAQ
 AZO,AutoZone Inc,Retail Trade,Specialty Stores,XLY - Consumer Discretionary,,NYSE
 BA,The Boeing Company,Electronic Technology,Aerospace & Defense,XLI - Industrials,,NYSE
