@@ -1,17 +1,4 @@
-# Condições do 2Down Green Monthly
-        rompeu_minima = low_curr < low_prev           # 1. Rompeu mínima anterior
-        fechou_verde = close_curr > open_curr         # 2. Fechou verde (close > open)
-        nao_rompeu_maxima = high_curr < high_prev     # 3. NÃO rompeu máxima anterior
-
-        # DEBUG TEMPORÁRIO - para identificar problema
-        if rompeu_minima and fechou_verde and nao_rompeu_maxima:
-            st.write(f"🚨 DEBUG {current.name.strftime('%Y-%m') if hasattr(current, 'name') else 'N/A'}:")
-            st.write(f"   Current:  O={open_curr:.2f} H={high_curr:.2f} L={low_curr:.2f} C={close_curr:.2f}")
-            st.write(f"   Previous: H={high_prev:.2f} L={low_prev:.2f}")
-            st.write(f"   ✅ Rompeu mínima: {low_curr:.2f} < {low_prev:.2f} = {rompeu_minima}")
-            st.write(f"   ✅ Fechou verde: {close_curr:.2f} > {open_curr:.2f} = {fechou_verde}")
-            st.write(f"   ✅ Não rompeu máxima: {high_curr:.2f} < {high_prev:.2f} = {nao_rompeu_maxima}")
-            st.write("---")import streamlit as st
+import streamlit as st
 import yfinance as yf
 import pandas as pd
 import time
@@ -144,15 +131,7 @@ def detect_inside_bar(df):
         maxima_dentro = high_curr < high_prev
         minima_dentro = low_curr > low_prev
         
-        # DEBUG TEMPORÁRIO para Inside Bar
         is_inside = maxima_dentro and minima_dentro
-        if is_inside:
-            st.write(f"🚨 INSIDE BAR DEBUG:")
-            st.write(f"   Current:  H={high_curr:.2f} L={low_curr:.2f}")
-            st.write(f"   Previous: H={high_prev:.2f} L={low_prev:.2f}")
-            st.write(f"   Máxima dentro: {high_curr:.2f} < {high_prev:.2f} = {maxima_dentro}")
-            st.write(f"   Mínima dentro: {low_curr:.2f} > {low_prev:.2f} = {minima_dentro}")
-            st.write("---")
 
         if is_inside:
             day_change = ((close_curr - open_curr) / open_curr) * 100 if open_curr != 0 else 0
@@ -166,86 +145,6 @@ def detect_inside_bar(df):
         st.error(f"Erro no Inside Bar: {e}")
         return False, None
     
-    return False, None
-
-
-def detect_2down_green_3m(df):
-    """
-    Detecta 2Down Green 3M (trimestral):
-    - Vela atual rompeu mínima da vela anterior (low_atual < low_anterior)
-    - Vela atual está verde (close_atual > open_atual)
-    - Vela atual NÃO rompeu máxima da vela anterior (high_atual < high_anterior)
-    """
-    if df is None or df.empty:
-        return False, None
-
-    try:
-        df_norm = normalize_dataframe(df)
-        if df_norm is None:
-            return False, None
-
-        # Garante que o índice é datetime
-        if not isinstance(df_norm.index, pd.DatetimeIndex):
-            df_norm = df_norm.reset_index()
-            if 'date' in df_norm.columns:
-                df_norm['date'] = pd.to_datetime(df_norm['date'])
-                df_norm = df_norm.set_index('date')
-            else:
-                # Se não há coluna de data, usa o índice atual como data
-                df_norm.index = pd.to_datetime(df_norm.index)
-
-        # Cria dados trimestrais (3M)
-        df_quarterly = df_norm.resample('3M').agg({
-            'open': 'first',
-            'high': 'max',
-            'low': 'min',
-            'close': 'last',
-            'volume': 'sum' if 'volume' in df_norm.columns else lambda x: 0
-        }).dropna()
-
-        if len(df_quarterly) < 2:  # Precisamos de pelo menos 2 barras trimestrais
-            return False, None
-
-        # Analisa as últimas 2 barras trimestrais
-        current = df_quarterly.iloc[-1]   # Barra atual (em andamento)
-        previous = df_quarterly.iloc[-2]  # Barra anterior
-
-        open_curr, high_curr, low_curr, close_curr, valid_flag = fix_candle(
-            float(current["open"]),
-            float(current["high"]),
-            float(current["low"]),
-            float(current["close"])
-        )
-        
-        high_prev = float(previous["high"])
-        low_prev = float(previous["low"])
-
-        # Condições do 2Down Green 3M
-        rompeu_minima = low_curr < low_prev           # 1. Rompeu mínima anterior
-        fechou_verde = close_curr > open_curr         # 2. Fechou verde
-        nao_rompeu_maxima = high_curr < high_prev     # 3. NÃO rompeu máxima anterior
-
-        if rompeu_minima and fechou_verde and nao_rompeu_maxima:
-            break_amount = low_prev - low_curr
-            break_pct = (break_amount / low_prev) * 100 if low_prev > 0 else 0
-            quarterly_change = ((close_curr - open_curr) / open_curr) * 100 if open_curr != 0 else 0
-
-            return True, {
-                "type": "2Down Green 3M",
-                "price": round(close_curr, 2),
-                "day_change": quarterly_change,
-                "valid": valid_flag,
-                "break_pct": round(break_pct, 2),
-                "quarterly_change_pct": round(quarterly_change, 2),
-                "rompeu_minima": rompeu_minima,
-                "fechou_verde": fechou_verde,
-                "nao_rompeu_maxima": nao_rompeu_maxima
-            }
-
-    except Exception as e:
-        st.error(f"Erro no 2Down Green 3M: {e}")
-        return False, None
-
     return False, None
 
 
@@ -273,7 +172,7 @@ def detect_2down_green_monthly(df):
             else:
                 df_norm.index = pd.to_datetime(df_norm.index)
 
-        # Cria dados mensais - usando último dia útil de cada mês
+        # Cria dados mensais
         df_monthly = df_norm.resample('M').agg({
             'open': 'first',
             'high': 'max',
@@ -309,19 +208,10 @@ def detect_2down_green_monthly(df):
         high_prev = float(previous["high"])
         low_prev = float(previous["low"])
 
-        # DEBUG - vamos imprimir os valores para análise
-        # st.write(f"DEBUG Monthly - Current: O={open_curr:.2f} H={high_curr:.2f} L={low_curr:.2f} C={close_curr:.2f}")
-        # st.write(f"DEBUG Monthly - Previous: H={high_prev:.2f} L={low_prev:.2f}")
-
         # Condições do 2Down Green Monthly
         rompeu_minima = low_curr < low_prev           # 1. Rompeu mínima anterior
-        fechou_verde = close_curr > open_curr         # 2. Fechou verde
+        fechou_verde = close_curr > open_curr         # 2. Fechou verde (close > open)
         nao_rompeu_maxima = high_curr < high_prev     # 3. NÃO rompeu máxima anterior
-
-        # DEBUG
-        # st.write(f"DEBUG - Rompeu mínima: {rompeu_minima} ({low_curr:.2f} < {low_prev:.2f})")
-        # st.write(f"DEBUG - Fechou verde: {fechou_verde} ({close_curr:.2f} > {open_curr:.2f})")
-        # st.write(f"DEBUG - Não rompeu máxima: {nao_rompeu_maxima} ({high_curr:.2f} < {high_prev:.2f})")
 
         if rompeu_minima and fechou_verde and nao_rompeu_maxima:
             break_amount = low_prev - low_curr
@@ -334,16 +224,87 @@ def detect_2down_green_monthly(df):
                 "day_change": monthly_change,
                 "valid": valid_flag,
                 "break_pct": round(break_pct, 2),
-                "monthly_change_pct": round(monthly_change, 2),
-                "rompeu_minima": rompeu_minima,
-                "fechou_verde": fechou_verde,
-                "nao_rompeu_maxima": nao_rompeu_maxima,
-                "current_date": current.name.strftime('%Y-%m') if hasattr(current, 'name') else 'N/A',
-                "previous_date": previous.name.strftime('%Y-%m') if hasattr(previous, 'name') else 'N/A'
+                "monthly_change_pct": round(monthly_change, 2)
             }
 
     except Exception as e:
         st.error(f"Erro no 2Down Green Monthly: {e}")
+        return False, None
+
+    return False, None
+
+
+def detect_2down_green_3m(df):
+    """
+    Detecta 2Down Green 3M (trimestral):
+    - Vela atual rompeu mínima da vela anterior (low_atual < low_anterior)
+    - Vela atual está verde (close_atual > open_atual)
+    - Vela atual NÃO rompeu máxima da vela anterior (high_atual < high_anterior)
+    """
+    if df is None or df.empty:
+        return False, None
+
+    try:
+        df_norm = normalize_dataframe(df)
+        if df_norm is None:
+            return False, None
+
+        # Garante que o índice é datetime
+        if not isinstance(df_norm.index, pd.DatetimeIndex):
+            df_norm = df_norm.reset_index()
+            if 'date' in df_norm.columns:
+                df_norm['date'] = pd.to_datetime(df_norm['date'])
+                df_norm = df_norm.set_index('date')
+            else:
+                df_norm.index = pd.to_datetime(df_norm.index)
+
+        # Cria dados trimestrais (3M)
+        df_quarterly = df_norm.resample('3M').agg({
+            'open': 'first',
+            'high': 'max',
+            'low': 'min',
+            'close': 'last',
+            'volume': 'sum' if 'volume' in df_norm.columns else lambda x: 0
+        }).dropna()
+
+        if len(df_quarterly) < 2:
+            return False, None
+
+        # Analisa as últimas 2 barras trimestrais
+        current = df_quarterly.iloc[-1]   # Barra atual (em andamento)
+        previous = df_quarterly.iloc[-2]  # Barra anterior
+
+        open_curr, high_curr, low_curr, close_curr, valid_flag = fix_candle(
+            float(current["open"]),
+            float(current["high"]),
+            float(current["low"]),
+            float(current["close"])
+        )
+        
+        high_prev = float(previous["high"])
+        low_prev = float(previous["low"])
+
+        # Condições do 2Down Green 3M
+        rompeu_minima = low_curr < low_prev           # 1. Rompeu mínima anterior
+        fechou_verde = close_curr > open_curr         # 2. Fechou verde
+        nao_rompeu_maxima = high_curr < high_prev     # 3. NÃO rompeu máxima anterior
+
+        if rompeu_minima and fechou_verde and nao_rompeu_maxima:
+            break_amount = low_prev - low_curr
+            break_pct = (break_amount / low_prev) * 100 if low_prev > 0 else 0
+            quarterly_change = ((close_curr - open_curr) / open_curr) * 100 if open_curr != 0 else 0
+
+            return True, {
+                "type": "2Down Green 3M",
+                "price": round(close_curr, 2),
+                "day_change": quarterly_change,
+                "valid": valid_flag,
+                "break_pct": round(break_pct, 2),
+                "quarterly_change_pct": round(quarterly_change, 2)
+            }
+
+    except Exception as e:
+        st.error(f"Erro no 2Down Green 3M: {e}")
         return False, None
 
     return False, None
