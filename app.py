@@ -241,11 +241,12 @@ def get_stock_data(symbol, period="2y", interval="1d"):
 
 
 @st.cache_data(ttl=3600)
-def load_symbols_local():
-    """Carrega símbolos do arquivo local symbols.csv"""
+def load_symbols():
+    """Carrega símbolos do arquivo local symbols.csv ou GitHub como fallback"""
     try:
         # Tenta carregar o arquivo local primeiro
         df = pd.read_csv("symbols.csv")
+        st.info("📁 Usando arquivo symbols.csv local")
         return df
     except FileNotFoundError:
         st.warning("📁 Arquivo 'symbols.csv' não encontrado localmente. Tentando carregar do GitHub...")
@@ -253,10 +254,12 @@ def load_symbols_local():
             # Fallback para GitHub se não encontrar local
             url = "https://raw.githubusercontent.com/Bastaocchi/stock-scanner-app/main/symbols.csv"
             df = pd.read_csv(url)
+            st.info("🌐 Usando arquivo symbols.csv do GitHub")
             return df
         except Exception as e:
             st.error(f"Erro ao carregar símbolos do GitHub: {e}")
             # Retorna uma lista padrão em caso de erro
+            st.warning("⚠️ Usando lista padrão de símbolos")
             return pd.DataFrame({
                 'symbols': ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA'],
                 'sector_spdr': ['Technology', 'Technology', 'Technology', 'Consumer Discretionary', 'Consumer Discretionary'],
@@ -264,6 +267,7 @@ def load_symbols_local():
             })
     except Exception as e:
         st.error(f"Erro ao ler arquivo symbols.csv: {e}")
+        st.warning("⚠️ Usando lista padrão de símbolos")
         return pd.DataFrame({
             'symbols': ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA'],
             'sector_spdr': ['Technology', 'Technology', 'Technology', 'Consumer Discretionary', 'Consumer Discretionary'],
@@ -299,9 +303,9 @@ def main():
     st.markdown('<h2 style="color:#ccc;">🎯 Scanner de Setups (Estilo Gerenciador)</h2>', unsafe_allow_html=True)
 
     try:
-        df_symbols = load_symbols_local()
+        df_symbols = load_symbols()
         df_symbols.columns = df_symbols.columns.str.strip().str.lower()
-        st.info(f"✅ Carregados {len(df_symbols)} símbolos do arquivo local")
+        st.success(f"✅ Carregados {len(df_symbols)} símbolos com sucesso!")
     except Exception as e:
         st.error(f"Erro ao carregar símbolos: {e}")
         return
